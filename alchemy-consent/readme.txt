@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, ccpa, cookie banner, consent mode
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.6.1
+Stable tag: 1.6.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -137,6 +137,62 @@ applying Law 25's standard nationwide is the safer default). Edit the
 list per site if a client's situation differs.
 
 == Changelog ==
+
+= 1.6.3 =
+Cleanup pass — no live "WA Consent" installs exist yet (still in test
+phase), so the remaining renamed-from-WA scaffolding was removed rather
+than kept as permanent backward compatibility:
+* Removed: the wa_consent -> alchemy_consent one-time migration
+  (table rename, option copy) from Alchemy_Consent_Activator — dead
+  code once every install starts life as Alchemy Consent.
+* Removed: [wa_cookie_policy], [wa_consent_settings_link], and
+  [wa_regulatory_links] legacy shortcode aliases. Use the alchemy_
+  prefixed names.
+* Fixed: the front-end localized script data was still named
+  `waConsentData` — the one leftover "wa"-prefixed identifier in the
+  codebase, despite 1.6.0 renaming everything else specifically
+  because WordPress.org flagged "wa" as a restricted term. Renamed to
+  `alchemyConsentData`.
+* Fixed: accent_color and revisit_bg_color were saved with
+  sanitize_text_field() rather than validated as actual hex colors —
+  a malformed value now falls back to the field's default instead of
+  being stored as-is.
+* Changed: the four admin_post handlers' identical
+  redirect-back-to-tab code consolidated into one helper.
+* Changed: settings are now fetched once per pageview and reused
+  (wp_enqueue_scripts and wp_footer both needed them) instead of
+  calling get_option() twice.
+
+= 1.6.2 =
+Fixes from an internal code review:
+* Fixed: saving the Geo Targeting tab with the Strict-countries field
+  cleared (rather than left untouched) stored an empty list instead of
+  falling back to the default — this silently exempted every visitor,
+  including GDPR-covered countries, from the banner. Now an emptied
+  field falls back to the default the same way an omitted one does.
+* Fixed: the consent-log CSV export wrote page_url — sourced from the
+  public, unauthenticated consent-save endpoint — into cells with no
+  formula-injection guard, letting a crafted value execute if the
+  export was opened in Excel/Sheets. Cell values are now prefixed with
+  a leading apostrophe when they start with a formula-trigger character.
+* Fixed: CSV export loaded the entire consent log into memory with no
+  LIMIT; now streamed in batches.
+* Fixed: clicking "Accept All" always granted analytics and marketing
+  regardless of whether those categories are enabled for the site —
+  now matches the geo auto-accept path and only grants enabled
+  categories. The consent-save AJAX handler also now re-checks
+  categories_enabled server-side rather than trusting the client.
+* Fixed: the Analytics checkbox in the banner's Customize panel always
+  rendered regardless of the Categories tab's "Show this category"
+  toggle — Marketing already respected it, Analytics didn't.
+* Fixed: Exempt-tier visitors (geo-targeting) saw no revisit button on
+  their first pageview as intended, but it reappeared on every later
+  pageview once the consent cookie existed. The cookie now records
+  which tier granted consent so the button stays hidden for Exempt on
+  return visits too. Cookies set before this version are still read
+  correctly.
+* Changed: five admin_post handlers each repeated the same nonce +
+  capability check inline; consolidated into one helper.
 
 = 1.6.1 =
 Second Plugin Check pass, 13 warnings found and fixed:

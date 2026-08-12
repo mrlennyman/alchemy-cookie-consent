@@ -9,14 +9,6 @@ class Alchemy_Consent_Shortcodes {
 		add_shortcode( 'alchemy_cookie_policy', array( $this, 'render_cookie_table' ) );
 		add_shortcode( 'alchemy_consent_settings_link', array( $this, 'render_settings_link' ) );
 		add_shortcode( 'alchemy_regulatory_links', array( $this, 'render_regulatory_links' ) );
-
-		// Backward-compatible aliases for the old wa_-prefixed shortcode
-		// names, so page content written before the rename (e.g. an
-		// already-published Cookie Policy page) keeps working without
-		// needing to be edited.
-		add_shortcode( 'wa_cookie_policy', array( $this, 'render_cookie_table' ) );
-		add_shortcode( 'wa_consent_settings_link', array( $this, 'render_settings_link' ) );
-		add_shortcode( 'wa_regulatory_links', array( $this, 'render_regulatory_links' ) );
 	}
 
 	/**

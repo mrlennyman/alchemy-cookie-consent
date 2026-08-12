@@ -18,6 +18,50 @@ class Alchemy_Consent_Admin {
 		add_menu_page( 'Alchemy Consent', 'Alchemy Consent', 'manage_options', 'alchemy-consent', array( $this, 'render_page' ), 'dashicons-shield', 58 );
 	}
 
+	/**
+	 * Shared nonce + capability guard for every admin_post handler below —
+	 * a single point of truth instead of five copies that could drift.
+	 */
+	private function verify_admin_request( $action ) {
+		check_admin_referer( $action );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to do this.', 'alchemy-consent' ) );
+		}
+	}
+
+	/**
+	 * Shared post-save redirect back to a tab on this settings page.
+	 */
+	private function redirect_to_tab( $tab ) {
+		wp_safe_redirect( add_query_arg( array( 'page' => 'alchemy-consent', 'tab' => $tab, 'updated' => '1' ), admin_url( 'admin.php' ) ) );
+		exit;
+	}
+
+	/**
+	 * sanitize_hex_color() returns null/empty for anything that isn't a
+	 * valid #rgb or #rrggbb value, so a malformed submission falls back to
+	 * the given default instead of storing something the banner's inline
+	 * style can't use.
+	 */
+	private function sanitize_hex_color_or_default( $posted, $default ) {
+		$color = sanitize_hex_color( wp_unslash( $posted ) );
+		return $color ? $color : $default;
+	}
+
+	/**
+	 * Neutralizes leading formula-trigger characters before a value is
+	 * written into an exported CSV cell — Excel/Sheets treat a cell
+	 * starting with =, +, -, or @ as a formula, and page_url in particular
+	 * originates from the public, unauthenticated consent-save endpoint.
+	 */
+	private function csv_safe( $value ) {
+		$value = (string) $value;
+		if ( isset( $value[0] ) && in_array( $value[0], array( '=', '+', '-', '@', "\t", "\r" ), true ) ) {
+			$value = "'" . $value;
+		}
+		return $value;
+	}
+
 	public function render_page() {
 		// Read-only tab selector for display only, doesn't change state, no nonce needed.
 		$tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'general'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -362,67 +406,57 @@ class Alchemy_Consent_Admin {
 	}
 
 	public function save_geo() {
-		check_admin_referer( 'alchemy_consent_save_geo' );
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to do this.', 'alchemy-consent' ) );
-		}
+		$this->verify_admin_request( 'alchemy_consent_save_geo' );
 
-		$settings                            = get_option( 'alchemy_consent_settings' );
-		$settings['geo_targeting_enabled']   = ! empty( $_POST['geo_targeting_enabled'] );
-		$settings['strict_countries']        = isset( $_POST['strict_countries'] )
-			? strtoupper( sanitize_text_field( wp_unslash( $_POST['strict_countries'] ) ) )
-			: Alchemy_Consent_Activator::default_strict_countries();
-		$settings['light_countries']         = isset( $_POST['light_countries'] )
-			? strtoupper( sanitize_text_field( wp_unslash( $_POST['light_countries'] ) ) )
-			: Alchemy_Consent_Activator::default_light_countries();
+		$settings                          = get_option( 'alchemy_consent_settings' );
+		$settings['geo_targeting_enabled'] = ! empty( $_POST['geo_targeting_enabled'] );
+
+		// A submitted-but-empty field (e.g. the textarea got cleared before
+		// saving) must fall back to the safe default just like a missing
+		// field does — otherwise it silently empties the Strict list and
+		// relaxes the banner everywhere, the opposite of "never accidentally
+		// relax" that geo-targeting is built around.
+		$strict_input                 = isset( $_POST['strict_countries'] ) ? sanitize_text_field( wp_unslash( $_POST['strict_countries'] ) ) : '';
+		$settings['strict_countries'] = '' !== $strict_input ? strtoupper( $strict_input ) : Alchemy_Consent_Activator::default_strict_countries();
+
+		$light_input                  = isset( $_POST['light_countries'] ) ? sanitize_text_field( wp_unslash( $_POST['light_countries'] ) ) : '';
+		$settings['light_countries']  = '' !== $light_input ? strtoupper( $light_input ) : Alchemy_Consent_Activator::default_light_countries();
 
 		update_option( 'alchemy_consent_settings', $settings );
-		wp_safe_redirect( add_query_arg( array( 'page' => 'alchemy-consent', 'tab' => 'geo', 'updated' => '1' ), admin_url( 'admin.php' ) ) );
-		exit;
+		$this->redirect_to_tab( 'geo' );
 	}
 
 	public function save_general() {
-		check_admin_referer( 'alchemy_consent_save_general' );
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to do this.', 'alchemy-consent' ) );
-		}
+		$this->verify_admin_request( 'alchemy_consent_save_general' );
 
 		$settings                    = get_option( 'alchemy_consent_settings' );
 		$settings['banner_message']  = isset( $_POST['banner_message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['banner_message'] ) ) : '';
 		$settings['accept_label']    = isset( $_POST['accept_label'] ) ? sanitize_text_field( wp_unslash( $_POST['accept_label'] ) ) : 'Accept All';
 		$settings['reject_label']    = isset( $_POST['reject_label'] ) ? sanitize_text_field( wp_unslash( $_POST['reject_label'] ) ) : 'Reject All';
 		$settings['customize_label'] = isset( $_POST['customize_label'] ) ? sanitize_text_field( wp_unslash( $_POST['customize_label'] ) ) : 'Customize';
-		$settings['accent_color']    = isset( $_POST['accent_color'] ) ? sanitize_text_field( wp_unslash( $_POST['accent_color'] ) ) : '#1a73e8';
+		$settings['accent_color']    = isset( $_POST['accent_color'] ) ? $this->sanitize_hex_color_or_default( $_POST['accent_color'], '#1a73e8' ) : '#1a73e8';
 		$settings['policy_page_id']  = isset( $_POST['policy_page_id'] ) ? absint( $_POST['policy_page_id'] ) : 0;
-		$settings['revisit_bg_color']      = isset( $_POST['revisit_bg_color'] ) ? sanitize_text_field( wp_unslash( $_POST['revisit_bg_color'] ) ) : '#ffffff';
+		$settings['revisit_bg_color']      = isset( $_POST['revisit_bg_color'] ) ? $this->sanitize_hex_color_or_default( $_POST['revisit_bg_color'], '#ffffff' ) : '#ffffff';
 		$settings['revisit_opacity']       = isset( $_POST['revisit_opacity'] ) ? max( 0, min( 100, absint( $_POST['revisit_opacity'] ) ) ) : 55;
 		$settings['revisit_hover_opacity'] = isset( $_POST['revisit_hover_opacity'] ) ? max( 0, min( 100, absint( $_POST['revisit_hover_opacity'] ) ) ) : 100;
 
 		update_option( 'alchemy_consent_settings', $settings );
-		wp_safe_redirect( add_query_arg( array( 'page' => 'alchemy-consent', 'tab' => 'general', 'updated' => '1' ), admin_url( 'admin.php' ) ) );
-		exit;
+		$this->redirect_to_tab( 'general' );
 	}
 
 	public function save_categories() {
-		check_admin_referer( 'alchemy_consent_save_categories' );
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to do this.', 'alchemy-consent' ) );
-		}
+		$this->verify_admin_request( 'alchemy_consent_save_categories' );
 
 		$settings                                     = get_option( 'alchemy_consent_settings' );
 		$settings['categories_enabled']['analytics']  = ! empty( $_POST['cat_analytics'] );
 		$settings['categories_enabled']['marketing']  = ! empty( $_POST['cat_marketing'] );
 
 		update_option( 'alchemy_consent_settings', $settings );
-		wp_safe_redirect( add_query_arg( array( 'page' => 'alchemy-consent', 'tab' => 'categories', 'updated' => '1' ), admin_url( 'admin.php' ) ) );
-		exit;
+		$this->redirect_to_tab( 'categories' );
 	}
 
 	public function save_cookies() {
-		check_admin_referer( 'alchemy_consent_save_cookies' );
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to do this.', 'alchemy-consent' ) );
-		}
+		$this->verify_admin_request( 'alchemy_consent_save_cookies' );
 
 		$cookies      = array();
 		$cookies_post = isset( $_POST['cookies'] ) ? wp_unslash( $_POST['cookies'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- unslashed here; every field is individually sanitized in the loop below before use.
@@ -440,20 +474,14 @@ class Alchemy_Consent_Admin {
 		}
 
 		update_option( 'alchemy_consent_cookie_list', $cookies );
-		wp_safe_redirect( add_query_arg( array( 'page' => 'alchemy-consent', 'tab' => 'cookies', 'updated' => '1' ), admin_url( 'admin.php' ) ) );
-		exit;
+		$this->redirect_to_tab( 'cookies' );
 	}
 
 	public function export_log() {
-		check_admin_referer( 'alchemy_consent_export_log' );
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to do this.', 'alchemy-consent' ) );
-		}
+		$this->verify_admin_request( 'alchemy_consent_export_log' );
 
 		global $wpdb;
 		$table = $wpdb->prefix . 'alchemy_consent_log';
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- this plugin's own table; an export needs the current data, not a cached copy.
-		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i ORDER BY consent_time DESC', $table ), ARRAY_A );
 
 		header( 'Content-Type: text/csv' );
 		header( 'Content-Disposition: attachment; filename="alchemy-consent-log.csv"' );
@@ -463,9 +491,36 @@ class Alchemy_Consent_Admin {
 		// WP_Filesystem API (which is for actual filesystem files) doesn't apply.
 		$out = fopen( 'php://output', 'w' );
 		fputcsv( $out, array( 'Date/Time', 'Categories', 'Source', 'IP Hash', 'Page URL' ) );
-		foreach ( $rows as $row ) {
-			fputcsv( $out, array( $row['consent_time'], $row['categories'], ! empty( $row['source'] ) ? $row['source'] : 'explicit', $row['ip_hash'], $row['page_url'] ) );
-		}
+
+		// Streamed in batches rather than SELECT * with no LIMIT — a
+		// long-lived site logs a row per first-time visitor, not just admin
+		// actions, so the table can grow well past what's safe to hold in
+		// memory as a single PHP array.
+		$batch_size = 500;
+		$offset     = 0;
+		do {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- this plugin's own table; an export needs the current data, not a cached copy.
+			$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i ORDER BY consent_time DESC LIMIT %d OFFSET %d', $table, $batch_size, $offset ), ARRAY_A );
+			foreach ( $rows as $row ) {
+				// page_url originates from the public, unauthenticated
+				// consent-save endpoint and only passes through esc_url_raw()
+				// (which doesn't strip leading =/+/-/@) — csv_safe() stops it
+				// from being interpreted as a formula when the export is
+				// opened in Excel/Sheets.
+				fputcsv(
+					$out,
+					array(
+						$this->csv_safe( $row['consent_time'] ),
+						$this->csv_safe( $row['categories'] ),
+						$this->csv_safe( ! empty( $row['source'] ) ? $row['source'] : 'explicit' ),
+						$this->csv_safe( $row['ip_hash'] ),
+						$this->csv_safe( $row['page_url'] ),
+					)
+				);
+			}
+			$offset += $batch_size;
+		} while ( count( $rows ) === $batch_size );
+
 		fclose( $out );
 		// phpcs:enable WordPress.WP.AlternativeFunctions
 		exit;

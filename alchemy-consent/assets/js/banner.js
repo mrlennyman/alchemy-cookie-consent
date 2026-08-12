@@ -9,6 +9,10 @@
 		return;
 	}
 
+	// Kept in sync with the cookie-read regex in output_datalayer_bridge()'s
+	// inline <head> script — that snippet has to stay separate from this
+	// enqueued file (it must run before this file loads), so the two can't
+	// share this function, but must parse the cookie identically.
 	function getCookie( name ) {
 		var match = document.cookie.match( new RegExp( '(^| )' + name + '=([^;]+)' ) );
 		return match ? decodeURIComponent( match[ 2 ] ) : null;
@@ -20,8 +24,38 @@
 		document.cookie = name + '=' + encodeURIComponent( value ) + ';expires=' + d.toUTCString() + ';path=/;SameSite=Lax';
 	}
 
+	/**
+	 * Reads back the stored consent as { categories, source }. The cookie
+	 * used to hold a bare categories array (pre-1.6.2) — that shape is
+	 * still accepted so visitors who already consented under the old
+	 * version aren't treated as having no consent after an upgrade.
+	 */
+	function getConsentState() {
+		var raw = getCookie( COOKIE_NAME );
+		if ( ! raw ) {
+			return null;
+		}
+		try {
+			var parsed = JSON.parse( raw );
+			return Array.isArray( parsed ) ? { categories: parsed, source: 'explicit' } : parsed;
+		} catch ( e ) {
+			return null;
+		}
+	}
+
+	function enabledCategories() {
+		var cats = [ 'necessary' ];
+		if ( alchemyConsentData.settings.categories_enabled.analytics ) {
+			cats.push( 'analytics' );
+		}
+		if ( alchemyConsentData.settings.categories_enabled.marketing ) {
+			cats.push( 'marketing' );
+		}
+		return cats;
+	}
+
 	function saveConsent( categories, source, revealButton ) {
-		setCookie( COOKIE_NAME, JSON.stringify( categories ), 180 );
+		setCookie( COOKIE_NAME, JSON.stringify( { categories: categories, source: source || 'explicit' } ), 180 );
 
 		// Same event shape as the early <head> push in output_datalayer_bridge()
 		// — a GTM trigger listening for either event sees a consistent shape
@@ -36,14 +70,14 @@
 
 		var body = new URLSearchParams();
 		body.append( 'action', 'alchemy_consent_save' );
-		body.append( 'nonce', waConsentData.nonce );
+		body.append( 'nonce', alchemyConsentData.nonce );
 		body.append( 'page_url', window.location.href );
 		body.append( 'source', source || 'explicit' );
 		categories.forEach( function ( c ) {
 			body.append( 'categories[]', c );
 		} );
 
-		fetch( waConsentData.ajaxUrl, {
+		fetch( alchemyConsentData.ajaxUrl, {
 			method: 'POST',
 			body: body,
 			credentials: 'same-origin',
@@ -88,32 +122,29 @@
 	}
 
 	function autoAccept( source, revealButton ) {
-		var cats = [ 'necessary' ];
-		if ( waConsentData.settings.categories_enabled.analytics ) {
-			cats.push( 'analytics' );
-		}
-		if ( waConsentData.settings.categories_enabled.marketing ) {
-			cats.push( 'marketing' );
-		}
-		saveConsent( cats, source, revealButton );
+		saveConsent( enabledCategories(), source, revealButton );
 	}
 
 	function init() {
 		// An existing choice always wins, regardless of geo settings — we
 		// never re-evaluate or override a visitor's own past decision.
-		if ( getCookie( COOKIE_NAME ) ) {
-			revisitBtn.hidden = false;
+		var state = getConsentState();
+		if ( state ) {
+			// Exempt-tier consent shows no UI at all, including the revisit
+			// button — that has to hold on every later pageview too, not
+			// just the pageview where auto-accept first ran.
+			revisitBtn.hidden = ( 'geo-exempt' === state.source );
 			return;
 		}
 
-		if ( ! waConsentData.settings.geo_targeting_enabled ) {
+		if ( ! alchemyConsentData.settings.geo_targeting_enabled ) {
 			openBanner();
 			return;
 		}
 
 		detectCountry().then( function ( country ) {
-			var strict = waConsentData.settings.strict_countries || [];
-			var light  = waConsentData.settings.light_countries || [];
+			var strict = alchemyConsentData.settings.strict_countries || [];
+			var light  = alchemyConsentData.settings.light_countries || [];
 
 			// null (detection failed) or a recognised Strict-list country
 			// both fall through to the normal blocking banner — the only
@@ -131,7 +162,7 @@
 	init();
 
 	document.getElementById( 'alchemy-consent-accept' ).addEventListener( 'click', function () {
-		saveConsent( [ 'necessary', 'analytics', 'marketing' ], 'explicit' );
+		saveConsent( enabledCategories(), 'explicit' );
 	} );
 
 	document.getElementById( 'alchemy-consent-reject' ).addEventListener( 'click', function () {

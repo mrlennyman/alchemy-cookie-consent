@@ -24,48 +24,10 @@ class Alchemy_Consent_Activator {
 			return;
 		}
 
-		self::migrate_from_wa_consent(); // one-time: sites running this under its previous name/slug.
 		self::create_log_table(); // dbDelta adds new columns without touching existing rows.
 		self::merge_new_setting_defaults();
 
 		update_option( 'alchemy_consent_db_version', ALCHEMY_CONSENT_VERSION );
-	}
-
-	/**
-	 * One-time migration for sites that ran this plugin under its previous
-	 * name/slug (WA Consent), before the rename forced by WordPress.org's
-	 * "wa" trademark restriction. Renames the DB table and copies option
-	 * data across so existing settings, cookie list, and consent history
-	 * aren't lost. Idempotent — each step only acts if the old data is
-	 * present and the new data isn't yet, so it's safe to leave running
-	 * on every load-check indefinitely.
-	 */
-	private static function migrate_from_wa_consent() {
-		global $wpdb;
-		$old_table = $wpdb->prefix . 'wa_consent_log';
-		$new_table = $wpdb->prefix . 'alchemy_consent_log';
-
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery -- one-time rename of this plugin's own table; identifiers built from $wpdb->prefix only, not user input.
-		$old_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $old_table ) );
-		$new_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $new_table ) );
-
-		if ( $old_exists && ! $new_exists ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- already uses $wpdb->prepare() with the %i identifier placeholder (WP 6.2+), the correct mechanism for dynamic table names; both values are built from $wpdb->prefix plus a fixed literal, never from user input. The checker doesn't recognise %i as sufficient escaping yet.
-			$wpdb->query( $wpdb->prepare( 'RENAME TABLE %i TO %i', $old_table, $new_table ) );
-		}
-		// phpcs:enable WordPress.DB.DirectDatabaseQuery
-
-		if ( false !== get_option( 'wa_consent_settings' ) && false === get_option( 'alchemy_consent_settings' ) ) {
-			add_option( 'alchemy_consent_settings', get_option( 'wa_consent_settings' ) );
-			delete_option( 'wa_consent_settings' );
-		}
-
-		if ( false !== get_option( 'wa_consent_cookie_list' ) && false === get_option( 'alchemy_consent_cookie_list' ) ) {
-			add_option( 'alchemy_consent_cookie_list', get_option( 'wa_consent_cookie_list' ) );
-			delete_option( 'wa_consent_cookie_list' );
-		}
-
-		delete_option( 'wa_consent_db_version' ); // old version marker, no longer relevant once migrated.
 	}
 
 	/**

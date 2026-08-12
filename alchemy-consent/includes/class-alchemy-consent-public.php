@@ -5,6 +5,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Alchemy_Consent_Public {
 
+	/** @var array|null Memoized per-request; avoids fetching the same option twice on one pageview (wp_enqueue_scripts + wp_footer both need it). */
+	private $settings;
+
 	public function __construct() {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'wp_footer', array( $this, 'render_banner' ) );
@@ -21,6 +24,13 @@ class Alchemy_Consent_Public {
 		// Tell the WP Consent API this plugin handles consent, so Site Kit
 		// (and anything else reading the API) recognises us as a valid CMP.
 		add_filter( 'wp_consent_api_registered_' . ALCHEMY_CONSENT_BASENAME, '__return_true' );
+	}
+
+	private function get_settings() {
+		if ( null === $this->settings ) {
+			$this->settings = get_option( 'alchemy_consent_settings' );
+		}
+		return $this->settings;
 	}
 
 	/**
@@ -43,8 +53,16 @@ class Alchemy_Consent_Public {
 <script>
 (function(){
 	window.dataLayer = window.dataLayer || [];
+	// Cookie-read regex kept in sync with getCookie() in banner.js — this
+	// snippet has to stay a separate inline script (see class doc above),
+	// so the two can't share one function, but they must parse the cookie
+	// identically.
 	var m = document.cookie.match(/(^| )alchemy_consent=([^;]+)/);
-	var cats = m ? JSON.parse(decodeURIComponent(m[2])) : null;
+	var parsed = m ? JSON.parse(decodeURIComponent(m[2])) : null;
+	// Cookie value is { categories: [...], source: '...' } as of 1.6.2 (was
+	// a bare categories array before) — accept both shapes so visitors who
+	// consented under the old version aren't treated as having no consent.
+	var cats = parsed ? ( Array.isArray(parsed) ? parsed : parsed.categories ) : null;
 	window.dataLayer.push({
 		event: 'alchemy_consent_default',
 		alchemy_consent_necessary: true,
@@ -60,16 +78,19 @@ class Alchemy_Consent_Public {
 		wp_enqueue_style( 'alchemy-consent-banner', ALCHEMY_CONSENT_URL . 'assets/css/banner.css', array(), ALCHEMY_CONSENT_VERSION );
 		wp_enqueue_script( 'alchemy-consent-banner', ALCHEMY_CONSENT_URL . 'assets/js/banner.js', array(), ALCHEMY_CONSENT_VERSION, true );
 
-		$settings = get_option( 'alchemy_consent_settings' );
+		$settings = $this->get_settings();
 
 		wp_localize_script(
 			'alchemy-consent-banner',
-			'waConsentData',
+			'alchemyConsentData',
 			array(
 				'ajaxUrl'  => admin_url( 'admin-ajax.php' ),
 				'nonce'    => wp_create_nonce( 'alchemy_consent_nonce' ),
 				'settings' => array(
-					'categories_enabled'     => $settings['categories_enabled'],
+					'categories_enabled'     => isset( $settings['categories_enabled'] ) ? $settings['categories_enabled'] : array(
+						'analytics' => false,
+						'marketing' => false,
+					),
 					'geo_targeting_enabled'  => ! empty( $settings['geo_targeting_enabled'] ),
 					'strict_countries'       => ! empty( $settings['strict_countries'] )
 						? array_map( 'trim', explode( ',', strtoupper( $settings['strict_countries'] ) ) )
@@ -83,7 +104,7 @@ class Alchemy_Consent_Public {
 	}
 
 	public function render_banner() {
-		$settings = get_option( 'alchemy_consent_settings' );
+		$settings = $this->get_settings();
 		include ALCHEMY_CONSENT_PATH . 'templates/banner.php';
 	}
 
@@ -99,6 +120,22 @@ class Alchemy_Consent_Public {
 		// logged in), so anything beyond the three real categories gets
 		// dropped rather than stored or acted on.
 		$categories = array_intersect( $categories, array( 'necessary', 'analytics', 'marketing' ) );
+
+		// Also enforce this site's categories_enabled setting server-side —
+		// the banner UI only offers a checkbox for enabled categories, but
+		// that's a client-side restriction only; a category disabled for
+		// this site must not be recordable as granted regardless of what a
+		// client sends (a stale cache, a scripted POST, or a client-side bug).
+		$settings_for_gate  = $this->get_settings();
+		$enabled_categories = isset( $settings_for_gate['categories_enabled'] ) ? $settings_for_gate['categories_enabled'] : array();
+		$categories         = array_values(
+			array_filter(
+				$categories,
+				function ( $category ) use ( $enabled_categories ) {
+					return 'necessary' === $category || ! empty( $enabled_categories[ $category ] );
+				}
+			)
+		);
 
 		// Push the choice into the WP Consent API. Site Kit reads this and
 		// handles the actual Google Consent Mode v2 signalling itself.

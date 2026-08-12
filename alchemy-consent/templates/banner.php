@@ -3,6 +3,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 /** @var array $settings */
+$alchemy_show_analytics = ! empty( $settings['categories_enabled']['analytics'] );
 $alchemy_show_marketing = ! empty( $settings['categories_enabled']['marketing'] );
 $alchemy_policy_page_id = isset( $settings['policy_page_id'] ) ? absint( $settings['policy_page_id'] ) : 0;
 $alchemy_policy_url     = $alchemy_policy_page_id ? get_permalink( $alchemy_policy_page_id ) : '';
@@ -42,7 +43,9 @@ $alchemy_revisit_bg_hover = $alchemy_hex_to_rgba( $alchemy_revisit_color, isset(
 
 		<div class="alchemy-consent-categories" hidden>
 			<label><input type="checkbox" checked disabled> Necessary</label>
-			<label><input type="checkbox" id="alchemy-consent-analytics"> Analytics</label>
+			<?php if ( $alchemy_show_analytics ) : ?>
+				<label><input type="checkbox" id="alchemy-consent-analytics"> Analytics</label>
+			<?php endif; ?>
 			<?php if ( $alchemy_show_marketing ) : ?>
 				<label><input type="checkbox" id="alchemy-consent-marketing"> Marketing</label>
 			<?php endif; ?>
