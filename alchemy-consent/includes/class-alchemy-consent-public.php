@@ -56,9 +56,16 @@ class Alchemy_Consent_Public {
 	// Cookie-read regex kept in sync with getCookie() in banner.js — this
 	// snippet has to stay a separate inline script (see class doc above),
 	// so the two can't share one function, but they must parse the cookie
-	// identically.
+	// identically, including the fail-safe try/catch (a malformed cookie —
+	// DevTools edit, a colliding third-party script, a truncating proxy —
+	// must not throw and silently skip the dataLayer.push below).
 	var m = document.cookie.match(/(^| )alchemy_consent=([^;]+)/);
-	var parsed = m ? JSON.parse(decodeURIComponent(m[2])) : null;
+	var parsed = null;
+	if ( m ) {
+		try {
+			parsed = JSON.parse(decodeURIComponent(m[2]));
+		} catch (e) {}
+	}
 	// Cookie value is { categories: [...], source: '...' } as of 1.6.2 (was
 	// a bare categories array before) — accept both shapes so visitors who
 	// consented under the old version aren't treated as having no consent.

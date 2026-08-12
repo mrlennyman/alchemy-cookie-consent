@@ -496,11 +496,26 @@ class Alchemy_Consent_Admin {
 		// long-lived site logs a row per first-time visitor, not just admin
 		// actions, so the table can grow well past what's safe to hold in
 		// memory as a single PHP array.
+		//
+		// Keyset pagination on id, not OFFSET: this table takes live inserts
+		// from the public consent-save endpoint for the whole duration of the
+		// export. Under OFFSET, a row inserted mid-export shifts every later
+		// page by one position, re-emitting some rows and silently dropping
+		// others — corrupting what's meant to be a compliance audit trail.
+		// New rows always get a larger id and sort ahead of our cursor, so
+		// `WHERE id < :last_id` is unaffected by anything inserted after the
+		// first batch was read. id also breaks ties within the same
+		// consent_time second, which a plain ORDER BY consent_time DESC does not.
 		$batch_size = 500;
-		$offset     = 0;
+		$last_id    = null;
 		do {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- this plugin's own table; an export needs the current data, not a cached copy.
-			$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i ORDER BY consent_time DESC LIMIT %d OFFSET %d', $table, $batch_size, $offset ), ARRAY_A );
+			if ( null === $last_id ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- this plugin's own table; an export needs the current data, not a cached copy.
+				$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i ORDER BY id DESC LIMIT %d', $table, $batch_size ), ARRAY_A );
+			} else {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- this plugin's own table; an export needs the current data, not a cached copy.
+				$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i WHERE id < %d ORDER BY id DESC LIMIT %d', $table, $last_id, $batch_size ), ARRAY_A );
+			}
 			foreach ( $rows as $row ) {
 				// page_url originates from the public, unauthenticated
 				// consent-save endpoint and only passes through esc_url_raw()
@@ -518,7 +533,10 @@ class Alchemy_Consent_Admin {
 					)
 				);
 			}
-			$offset += $batch_size;
+			if ( $rows ) {
+				$last_row = end( $rows );
+				$last_id  = (int) $last_row['id'];
+			}
 		} while ( count( $rows ) === $batch_size );
 
 		fclose( $out );

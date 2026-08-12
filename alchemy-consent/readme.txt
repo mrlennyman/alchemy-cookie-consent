@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, ccpa, cookie banner, consent mode
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.6.3
+Stable tag: 1.6.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -137,6 +137,23 @@ applying Law 25's standard nationwide is the safer default). Edit the
 list per site if a client's situation differs.
 
 == Changelog ==
+
+= 1.6.4 =
+Fixes from an /ultrareview pass on 1.6.3:
+* Fixed: the wp_head dataLayer-bridge script's cookie parse had no
+  try/catch, unlike banner.js's equivalent — a malformed alchemy_consent
+  cookie (DevTools edit, a colliding third-party script, a truncating
+  proxy) would throw and silently skip the dataLayer.push, blocking every
+  GTM tag gated on alchemy_consent_default (Bing UET, FB Pixel, Hotjar,
+  Clarity). Now wrapped the same way banner.js already was.
+* Fixed: the 1.6.3 CSV export batching used OFFSET pagination on a table
+  that keeps taking live inserts from the public consent-save endpoint
+  for the whole duration of the export — a row inserted mid-export shifts
+  every later page by one position under OFFSET, re-emitting some rows
+  and silently dropping others. Switched to keyset pagination (WHERE id <
+  last_id ORDER BY id DESC), which is unaffected by concurrent inserts
+  and also fixes same-second consent_time rows sorting inconsistently
+  across batches.
 
 = 1.6.3 =
 Cleanup pass — no live "WA Consent" installs exist yet (still in test
