@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, ccpa, cookie banner, consent mode
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.6.5
+Stable tag: 1.6.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -137,6 +137,16 @@ applying Law 25's standard nationwide is the safer default). Edit the
 list per site if a client's situation differs.
 
 == Changelog ==
+
+= 1.6.6 =
+* Fixed: the GitHub repo had plugin files nested inside an extra
+  alchemy-consent/ subfolder instead of sitting at the repo root.
+  Combined with GitHub always wrapping a tag's downloaded zip in its
+  own folder, this put alchemy-consent.php two levels deep, which the
+  1.6.5 update attempt failed to install ("The package could not be
+  installed") since WordPress's installer only unwraps one wrapping
+  folder. Repo restructured so the plugin's files are now directly at
+  the repo root — no code changes, packaging only.
 
 = 1.6.5 =
 No functional changes — version bump to verify the GitHub-based update
