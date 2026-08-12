@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, ccpa, cookie banner, consent mode
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.6.4
+Stable tag: 1.6.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -137,6 +137,12 @@ applying Law 25's standard nationwide is the safer default). Edit the
 list per site if a client's situation differs.
 
 == Changelog ==
+
+= 1.6.5 =
+No functional changes — version bump to verify the GitHub-based update
+checker end to end on a live install (confirms client sites show a
+real "Update available" notice and Update Now works, instead of
+needing a manual re-upload).
 
 = 1.6.4 =
 Fixes from an /ultrareview pass on 1.6.3:
