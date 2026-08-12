@@ -24,6 +24,23 @@ require_once ALCHEMY_CONSENT_PATH . 'includes/class-alchemy-consent-admin.php';
 require_once ALCHEMY_CONSENT_PATH . 'includes/class-alchemy-consent-public.php';
 require_once ALCHEMY_CONSENT_PATH . 'includes/class-alchemy-consent-shortcodes.php';
 
+// Not on WordPress.org, so this is what gives client sites a real
+// "Update available" notice + one-click Update Now instead of needing a
+// manual zip re-upload every release (which is also what triggers the
+// nested-folder bug in WP core's "Replace current with uploaded" flow).
+require_once ALCHEMY_CONSENT_PATH . 'includes/plugin-update-checker/plugin-update-checker.php';
+use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
+
+$alchemy_consent_update_checker = PucFactory::buildUpdateChecker(
+	'https://github.com/mrlennyman/alchemy-consent/',
+	__FILE__,
+	'alchemy-consent'
+);
+$alchemy_consent_update_checker->setBranch( 'main' );
+// Releases are tagged (vX.Y.Z on main), not published via GitHub's separate
+// "Releases" feature, so release assets are left off — PUC builds the
+// update zip from the tagged source automatically.
+
 register_activation_hook( __FILE__, array( 'Alchemy_Consent_Activator', 'activate' ) );
 
 // Catches sites where the plugin files are overwritten directly (SFTP/zip
