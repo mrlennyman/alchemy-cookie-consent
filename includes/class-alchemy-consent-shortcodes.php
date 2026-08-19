@@ -9,6 +9,7 @@ class Alchemy_Consent_Shortcodes {
 		add_shortcode( 'alchemy_cookie_policy', array( $this, 'render_cookie_table' ) );
 		add_shortcode( 'alchemy_consent_settings_link', array( $this, 'render_settings_link' ) );
 		add_shortcode( 'alchemy_regulatory_links', array( $this, 'render_regulatory_links' ) );
+		add_shortcode( 'alchemy_privacy_choices', array( $this, 'render_privacy_choices_link' ) );
 	}
 
 	/**
@@ -55,6 +56,22 @@ class Alchemy_Consent_Shortcodes {
 	public function render_settings_link( $atts ) {
 		$atts = shortcode_atts( array( 'label' => 'Cookie Settings' ), $atts );
 		return '<button type="button" class="alchemy-consent-reopen-link" onclick="document.dispatchEvent(new Event(\'alchemy-consent-reopen\'))">' . esc_html( $atts['label'] ) . '</button>';
+	}
+
+	/**
+	 * CPRA/CCPA's "Do Not Sell or Share My Personal Information" link —
+	 * intended for a client's site footer, one click, no need to reopen
+	 * and hunt through the full banner. The icon is a generic two-tone
+	 * toggle rendered inline (not the exact official CPPA artwork, which
+	 * isn't something this plugin can fetch/bundle) — swap it for the
+	 * official asset per client if pixel-exact regulatory icon match
+	 * matters. Clicking dispatches an event banner.js listens for, so
+	 * this shortcode doesn't need to know the plugin's consent internals.
+	 */
+	public function render_privacy_choices_link( $atts ) {
+		$atts = shortcode_atts( array( 'label' => 'Your Privacy Choices' ), $atts );
+		$icon = '<svg width="20" height="12" viewBox="0 0 20 12" aria-hidden="true" focusable="false" style="vertical-align:middle;margin-right:6px;"><rect x="0" y="0" width="20" height="12" rx="6" fill="#000"/><rect x="0" y="0" width="10" height="12" rx="6" fill="#06f"/><circle cx="14" cy="6" r="4.5" fill="#fff"/></svg>';
+		return '<button type="button" class="alchemy-consent-privacy-choices" onclick="document.dispatchEvent(new Event(\'alchemy-consent-optout\'))">' . $icon . esc_html( $atts['label'] ) . '</button>';
 	}
 
 	/**

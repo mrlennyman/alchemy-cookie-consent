@@ -245,6 +245,7 @@ class Alchemy_Consent_Admin {
 		$cookies = get_option( 'alchemy_consent_cookie_list', array() );
 		?>
 		<p>This list drives the <code>[alchemy_cookie_policy]</code> shortcode on your policy page. Add or edit rows for whatever this site actually runs.</p>
+		<p class="description">"High-risk" tools (session recording, live chat) get their own always-on consent prompt shown to every visitor regardless of geo-targeting tier — separate from the Necessary/Analytics/Marketing categories above, since the legal question for those tools (CIPA-style "wiretap" risk) turns on consent timing, not visitor location.</p>
 		<p>
 			<label for="alchemy-consent-common-service">Quick-add a common service:</label>
 			<select id="alchemy-consent-common-service">
@@ -261,7 +262,7 @@ class Alchemy_Consent_Admin {
 			<?php wp_nonce_field( 'alchemy_consent_save_cookies' ); ?>
 			<table class="widefat" id="alchemy-consent-cookie-table">
 				<thead>
-					<tr><th>Cookie name</th><th>Category</th><th>Purpose</th><th>Duration</th><th></th></tr>
+					<tr><th>Cookie name</th><th>Category</th><th>Purpose</th><th>Duration</th><th>High-risk</th><th>Visitor notice</th><th></th></tr>
 				</thead>
 				<tbody>
 				<?php foreach ( $cookies as $i => $c ) : ?>
@@ -276,6 +277,8 @@ class Alchemy_Consent_Admin {
 						</td>
 						<td><input type="text" name="cookies[<?php echo (int) $i; ?>][purpose]" value="<?php echo esc_attr( $c['purpose'] ); ?>" class="regular-text"></td>
 						<td><input type="text" name="cookies[<?php echo (int) $i; ?>][duration]" value="<?php echo esc_attr( $c['duration'] ); ?>" class="small-text"></td>
+						<td style="text-align:center;"><input type="checkbox" name="cookies[<?php echo (int) $i; ?>][high_risk]" value="1" <?php checked( ! empty( $c['high_risk'] ) ); ?>></td>
+						<td><input type="text" name="cookies[<?php echo (int) $i; ?>][notice]" value="<?php echo esc_attr( isset( $c['notice'] ) ? $c['notice'] : '' ); ?>" class="regular-text" placeholder="Shown to visitors if High-risk is checked"></td>
 						<td><button type="button" class="button alchemy-consent-remove-row">Remove</button></td>
 					</tr>
 				<?php endforeach; ?>
@@ -295,6 +298,8 @@ class Alchemy_Consent_Admin {
 				var category = prefill ? prefill.category : 'necessary';
 				var purpose = prefill ? prefill.purpose : '';
 				var duration = prefill ? prefill.duration : '';
+				var highRisk = prefill ? !! prefill.high_risk : false;
+				var notice = prefill ? ( prefill.notice || '' ) : '';
 				var row = document.createElement( 'tr' );
 				row.innerHTML =
 					'<td><input type="text" name="cookies[' + i + '][name]" value="' + name + '" class="regular-text"></td>' +
@@ -305,6 +310,8 @@ class Alchemy_Consent_Admin {
 					'</select></td>' +
 					'<td><input type="text" name="cookies[' + i + '][purpose]" value="' + purpose + '" class="regular-text"></td>' +
 					'<td><input type="text" name="cookies[' + i + '][duration]" value="' + duration + '" class="small-text"></td>' +
+					'<td style="text-align:center;"><input type="checkbox" name="cookies[' + i + '][high_risk]" value="1"' + ( highRisk ? ' checked' : '' ) + '></td>' +
+					'<td><input type="text" name="cookies[' + i + '][notice]" value="' + notice + '" class="regular-text" placeholder="Shown to visitors if High-risk is checked"></td>' +
 					'<td><button type="button" class="button alchemy-consent-remove-row">Remove</button></td>';
 				tbody.appendChild( row );
 			}
@@ -334,43 +341,62 @@ class Alchemy_Consent_Admin {
 	 * separate document so it can't drift out of sync with what the
 	 * Cookie List tab actually offers. Extend this list as new tools
 	 * come up across the portfolio rather than re-researching each time.
+	 *
+	 * high_risk / notice: session-replay and chat tools default to
+	 * flagged, per the CIPA-style wiretap theory (capturing keystrokes,
+	 * mouse movement, or message content before consent) — a different
+	 * legal question from the Necessary/Analytics/Marketing categories,
+	 * so they get their own always-ask prompt regardless of geo tier.
+	 * Ad/analytics pixels (Bing UET, Facebook Pixel) are named more
+	 * loosely in that case law, so left off by default — a judgment
+	 * call to flip on per client if wanted, not forced.
 	 */
 	private function get_common_services() {
 		return array(
 			'bing_uet'      => array(
-				'label'    => 'Bing UET (Microsoft Ads)',
-				'name'     => '_uetsid / _uetvid',
-				'category' => 'marketing',
-				'purpose'  => 'Microsoft Bing Ads — tracks conversions and enables remarketing. Not supported by Site Kit; needs a GTM tag wired to the alchemy_consent_marketing signal.',
-				'duration' => 'Session / 13 months',
+				'label'     => 'Bing UET (Microsoft Ads)',
+				'name'      => '_uetsid / _uetvid',
+				'category'  => 'marketing',
+				'purpose'   => 'Microsoft Bing Ads — tracks conversions and enables remarketing. Not supported by Site Kit; needs a GTM tag wired to the alchemy_consent_marketing signal.',
+				'duration'  => 'Session / 13 months',
+				'high_risk' => false,
+				'notice'    => '',
 			),
 			'facebook_pixel' => array(
-				'label'    => 'Facebook / Meta Pixel',
-				'name'     => '_fbp',
-				'category' => 'marketing',
-				'purpose'  => 'Meta Pixel — tracks conversions and enables retargeting.',
-				'duration' => '3 months',
+				'label'     => 'Facebook / Meta Pixel',
+				'name'      => '_fbp',
+				'category'  => 'marketing',
+				'purpose'   => 'Meta Pixel — tracks conversions and enables retargeting.',
+				'duration'  => '3 months',
+				'high_risk' => false,
+				'notice'    => '',
 			),
 			'hotjar'        => array(
-				'label'    => 'Hotjar',
-				'name'     => '_hjSession_* / _hjSessionUser_*',
-				'category' => 'analytics',
-				'purpose'  => 'Hotjar — session recording and heatmaps.',
-				'duration' => '30 min / 1 year',
+				'label'     => 'Hotjar',
+				'name'      => '_hjSession_* / _hjSessionUser_*',
+				'category'  => 'analytics',
+				'purpose'   => 'Hotjar — session recording and heatmaps.',
+				'duration'  => '30 min / 1 year',
+				'high_risk' => true,
+				'notice'    => "This site uses screen recording software to see how visitors interact with our pages, including mouse movements and clicks. Recording won't start unless you agree.",
 			),
 			'clarity'       => array(
-				'label'    => 'Microsoft Clarity',
-				'name'     => '_clck / _clsk',
-				'category' => 'analytics',
-				'purpose'  => 'Microsoft Clarity — session recording and heatmaps.',
-				'duration' => '1 year / 1 day',
+				'label'     => 'Microsoft Clarity',
+				'name'      => '_clck / _clsk',
+				'category'  => 'analytics',
+				'purpose'   => 'Microsoft Clarity — session recording and heatmaps.',
+				'duration'  => '1 year / 1 day',
+				'high_risk' => true,
+				'notice'    => "This site uses screen recording software to see how visitors interact with our pages, including mouse movements and clicks. Recording won't start unless you agree.",
 			),
 			'live_chat'     => array(
-				'label'    => 'Live chat widget (generic)',
-				'name'     => '(varies by vendor)',
-				'category' => 'necessary',
-				'purpose'  => 'Live chat — remembers your conversation while you\'re actively chatting. Recategorise as Analytics/Marketing if this vendor also profiles visitors who never open the chat.',
-				'duration' => 'Session',
+				'label'     => 'Live chat widget (generic)',
+				'name'      => '(varies by vendor)',
+				'category'  => 'necessary',
+				'purpose'   => 'Live chat — remembers your conversation while you\'re actively chatting. Recategorise as Analytics/Marketing if this vendor also profiles visitors who never open the chat.',
+				'duration'  => 'Session',
+				'high_risk' => true,
+				'notice'    => 'This site offers live chat through a third-party provider. If you start a chat, your messages are shared with that provider. You can still browse the site without using chat.',
 			),
 		);
 	}
@@ -466,10 +492,12 @@ class Alchemy_Consent_Admin {
 				continue;
 			}
 			$cookies[] = array(
-				'name'     => sanitize_text_field( $c['name'] ),
-				'category' => sanitize_key( $c['category'] ),
-				'purpose'  => sanitize_text_field( $c['purpose'] ),
-				'duration' => sanitize_text_field( $c['duration'] ),
+				'name'      => sanitize_text_field( $c['name'] ),
+				'category'  => sanitize_key( $c['category'] ),
+				'purpose'   => sanitize_text_field( $c['purpose'] ),
+				'duration'  => sanitize_text_field( $c['duration'] ),
+				'high_risk' => ! empty( $c['high_risk'] ),
+				'notice'    => isset( $c['notice'] ) ? sanitize_text_field( $c['notice'] ) : '',
 			);
 		}
 

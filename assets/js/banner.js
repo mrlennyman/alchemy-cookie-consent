@@ -2,8 +2,10 @@
 	'use strict';
 
 	var COOKIE_NAME = 'alchemy_consent';
+	var HIGH_RISK_COOKIE_NAME = 'alchemy_consent_highrisk';
 	var banner = document.getElementById( 'alchemy-consent-banner' );
 	var revisitBtn = document.getElementById( 'alchemy-consent-revisit' );
+	var highRiskBanner = document.getElementById( 'alchemy-consent-highrisk-banner' );
 
 	if ( ! banner ) {
 		return;
@@ -43,12 +45,27 @@
 		}
 	}
 
+	/**
+	 * Global Privacy Control (navigator.globalPrivacyControl) is a browser/
+	 * extension-level signal meaning "treat this as an opt-out of sale or
+	 * sharing of my personal information" — CPPA guidance treats it as a
+	 * valid CCPA/CPRA opt-out request that a business must honor without
+	 * requiring a separate click. It's an opt-out signal, not opt-in
+	 * consent, so it only ever suppresses marketing (the plugin's closest
+	 * equivalent to "sale/sharing") — it never grants analytics or
+	 * anything else on its own; Strict-tier visitors still see the normal
+	 * blocking banner and must make an actual choice.
+	 */
+	function gpcOptOut() {
+		return true === navigator.globalPrivacyControl;
+	}
+
 	function enabledCategories() {
 		var cats = [ 'necessary' ];
 		if ( alchemyConsentData.settings.categories_enabled.analytics ) {
 			cats.push( 'analytics' );
 		}
-		if ( alchemyConsentData.settings.categories_enabled.marketing ) {
+		if ( alchemyConsentData.settings.categories_enabled.marketing && ! gpcOptOut() ) {
 			cats.push( 'marketing' );
 		}
 		return cats;
@@ -73,6 +90,7 @@
 		body.append( 'nonce', alchemyConsentData.nonce );
 		body.append( 'page_url', window.location.href );
 		body.append( 'source', source || 'explicit' );
+		body.append( 'scope', 'general' );
 		categories.forEach( function ( c ) {
 			body.append( 'categories[]', c );
 		} );
@@ -90,6 +108,70 @@
 		if ( revealButton !== false ) {
 			revisitBtn.hidden = false;
 		}
+
+		// Checked only once the main banner is out of the way, so a visitor
+		// is never shown two overlapping prompts at once — see
+		// maybeShowHighRiskPrompt() for why this is a separate decision
+		// from the categories above.
+		maybeShowHighRiskPrompt();
+	}
+
+	/**
+	 * Session-recording and chat-type tools get their own always-ask
+	 * prompt, independent of Strict/Light/Exempt tier — unlike general
+	 * Analytics/Marketing, this isn't about where the visitor is, it's
+	 * about whether the tool captured anything before they said yes. It
+	 * only appears if the Cookie List has at least one row flagged
+	 * High-risk, and only once (governed by its own cookie, separate from
+	 * the general consent cookie).
+	 */
+	function maybeShowHighRiskPrompt() {
+		if ( ! highRiskBanner ) {
+			return;
+		}
+		if ( ! alchemyConsentData.settings.has_high_risk ) {
+			return;
+		}
+		if ( getCookie( HIGH_RISK_COOKIE_NAME ) ) {
+			return;
+		}
+		var notices = alchemyConsentData.settings.high_risk_notices || [];
+		if ( ! notices.length ) {
+			return;
+		}
+		var msg = document.getElementById( 'alchemy-consent-highrisk-standalone-message' );
+		if ( msg ) {
+			msg.textContent = notices.join( ' ' );
+		}
+		highRiskBanner.classList.remove( 'alchemy-consent-hidden' );
+	}
+
+	function saveHighRiskConsent( granted ) {
+		setCookie( HIGH_RISK_COOKIE_NAME, granted ? 'granted' : 'declined', 180 );
+
+		window.dataLayer = window.dataLayer || [];
+		window.dataLayer.push( {
+			event: 'alchemy_consent_highrisk_update',
+			alchemy_consent_highrisk: granted,
+		} );
+
+		var body = new URLSearchParams();
+		body.append( 'action', 'alchemy_consent_save' );
+		body.append( 'nonce', alchemyConsentData.nonce );
+		body.append( 'page_url', window.location.href );
+		body.append( 'source', 'explicit' );
+		body.append( 'scope', 'highrisk' );
+		if ( granted ) {
+			body.append( 'categories[]', 'high_risk' );
+		}
+
+		fetch( alchemyConsentData.ajaxUrl, {
+			method: 'POST',
+			body: body,
+			credentials: 'same-origin',
+		} );
+
+		highRiskBanner.classList.add( 'alchemy-consent-hidden' );
 	}
 
 	function openBanner() {
@@ -134,6 +216,7 @@
 			// button — that has to hold on every later pageview too, not
 			// just the pageview where auto-accept first ran.
 			revisitBtn.hidden = ( 'geo-exempt' === state.source );
+			maybeShowHighRiskPrompt();
 			return;
 		}
 
@@ -150,9 +233,17 @@
 			// both fall through to the normal blocking banner — the only
 			// paths that skip it are confirmed Light or Exempt countries.
 			if ( ! country || strict.indexOf( country ) !== -1 ) {
-				openBanner(); // Strict — opt-in required.
+				openBanner(); // Strict — opt-in required regardless of GPC; an opt-out signal can't substitute for affirmative consent.
 			} else if ( light.indexOf( country ) !== -1 ) {
-				autoAccept( 'geo-light', true ); // Light — auto-granted, opt-out button shown.
+				autoAccept( 'geo-light', true ); // Light — auto-granted (minus marketing if GPC is set), opt-out button shown.
+			} else if ( gpcOptOut() ) {
+				// Exempt tier normally shows nothing at all, but a visitor
+				// who's actively sent an opt-out signal has expressed a
+				// preference — honor it (enabledCategories() already
+				// excludes marketing) and surface the button so they can
+				// see/change it, rather than silently auto-granting with no
+				// visible trace that a signal was even received.
+				autoAccept( 'gpc', true );
 			} else {
 				autoAccept( 'geo-exempt', false ); // Exempt — auto-granted, nothing shown at all.
 			}
@@ -195,4 +286,33 @@
 	// Lets the [alchemy_consent_settings_link] shortcode (or any custom link)
 	// reopen the banner without duplicating this logic.
 	document.addEventListener( 'alchemy-consent-reopen', openBanner );
+
+	if ( highRiskBanner ) {
+		document.getElementById( 'alchemy-consent-highrisk-accept' ).addEventListener( 'click', function () {
+			saveHighRiskConsent( true );
+		} );
+		document.getElementById( 'alchemy-consent-highrisk-decline' ).addEventListener( 'click', function () {
+			saveHighRiskConsent( false );
+		} );
+	}
+
+	// [alchemy_privacy_choices] shortcode dispatches this — a one-click
+	// "Do Not Sell or Share My Personal Information" opt-out rather than
+	// reopening the full banner and asking the visitor to find the right
+	// checkbox. Keeps whatever categories are already granted (including
+	// an unrelated Customize choice made earlier) and only strips
+	// marketing, since that's the plugin's closest equivalent to CPRA's
+	// "sale/sharing" concept.
+	document.addEventListener( 'alchemy-consent-optout', function () {
+		var state = getConsentState();
+		var current = state ? state.categories.slice() : enabledCategories();
+		var idx = current.indexOf( 'marketing' );
+		if ( idx !== -1 ) {
+			current.splice( idx, 1 );
+		}
+		if ( current.indexOf( 'necessary' ) === -1 ) {
+			current.unshift( 'necessary' );
+		}
+		saveConsent( current, 'explicit' );
+	} );
 } )();

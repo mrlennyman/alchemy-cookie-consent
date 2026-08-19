@@ -60,3 +60,20 @@ $alchemy_revisit_bg_hover = $alchemy_hex_to_rgba( $alchemy_revisit_color, isset(
 	</div>
 </div>
 <button type="button" id="alchemy-consent-revisit" class="alchemy-consent-revisit" aria-label="Cookie settings" hidden style="--alchemy-consent-revisit-bg: <?php echo esc_attr( $alchemy_revisit_bg ); ?>; --alchemy-consent-revisit-bg-hover: <?php echo esc_attr( $alchemy_revisit_bg_hover ); ?>;">&#127850;</button>
+
+<!--
+Standalone compact prompt for session-recording/chat-type tools. Shown
+independently of the main banner above — it applies to every visitor
+regardless of Strict/Light/Exempt tier (see class-alchemy-consent-public.php
+for why this sits outside the geo-tier system), and only appears at all
+if the Cookie List has at least one row flagged High-risk.
+-->
+<div id="alchemy-consent-highrisk-banner" class="alchemy-consent-banner alchemy-consent-highrisk-banner alchemy-consent-hidden" style="--alchemy-consent-accent: <?php echo esc_attr( $settings['accent_color'] ); ?>;">
+	<div class="alchemy-consent-inner">
+		<p class="alchemy-consent-message" id="alchemy-consent-highrisk-standalone-message"></p>
+		<div class="alchemy-consent-actions">
+			<button type="button" id="alchemy-consent-highrisk-decline" class="alchemy-consent-btn alchemy-consent-btn-outline">No Thanks</button>
+			<button type="button" id="alchemy-consent-highrisk-accept" class="alchemy-consent-btn alchemy-consent-btn-solid">I Agree</button>
+		</div>
+	</div>
+</div>

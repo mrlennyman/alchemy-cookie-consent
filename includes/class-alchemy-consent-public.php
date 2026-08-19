@@ -8,6 +8,9 @@ class Alchemy_Consent_Public {
 	/** @var array|null Memoized per-request; avoids fetching the same option twice on one pageview (wp_enqueue_scripts + wp_footer both need it). */
 	private $settings;
 
+	/** @var array|null Memoized per-request; enqueue_assets() and ajax_save_consent() (for the highrisk scope) both need it. */
+	private $high_risk_notices;
+
 	public function __construct() {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'wp_footer', array( $this, 'render_banner' ) );
@@ -47,6 +50,14 @@ class Alchemy_Consent_Public {
 	 * "alchemy_consent_update", gated on the matching alchemy_consent_* variable —
 	 * the same mechanism Site Kit uses for Google's own tags, just made
 	 * available to everything else routed through GTM.
+	 *
+	 * alchemy_consent_highrisk is a separate signal from the
+	 * necessary/analytics/marketing ones — it tracks the always-ask
+	 * session-recording/chat prompt, which applies regardless of geo tier
+	 * rather than following Strict/Light/Exempt logic. A GTM trigger for
+	 * Hotjar/Clarity/a chat widget should key off this variable, not the
+	 * general alchemy_consent_analytics one, even though those tools may
+	 * also be categorised as Analytics for the cookie policy table.
 	 */
 	public function output_datalayer_bridge() {
 		?>
@@ -70,15 +81,44 @@ class Alchemy_Consent_Public {
 	// a bare categories array before) — accept both shapes so visitors who
 	// consented under the old version aren't treated as having no consent.
 	var cats = parsed ? ( Array.isArray(parsed) ? parsed : parsed.categories ) : null;
+	var hr = document.cookie.match(/(^| )alchemy_consent_highrisk=([^;]+)/);
+	var highRisk = hr ? decodeURIComponent(hr[2]) === 'granted' : false;
 	window.dataLayer.push({
 		event: 'alchemy_consent_default',
 		alchemy_consent_necessary: true,
 		alchemy_consent_analytics: cats ? cats.indexOf('analytics') !== -1 : false,
-		alchemy_consent_marketing: cats ? cats.indexOf('marketing') !== -1 : false
+		alchemy_consent_marketing: cats ? cats.indexOf('marketing') !== -1 : false,
+		alchemy_consent_highrisk: highRisk
 	});
 })();
 </script>
 		<?php
+	}
+
+	/**
+	 * Notices for every cookie-list row flagged High-risk, deduplicated —
+	 * drives both the localized settings (has the site got any at all?)
+	 * and the standalone prompt's message text. Computed from the cookie
+	 * list itself rather than a separate toggle, so it can't drift out of
+	 * sync with what the Cookie List tab actually has flagged.
+	 */
+	private function get_high_risk_notices() {
+		if ( null !== $this->high_risk_notices ) {
+			return $this->high_risk_notices;
+		}
+		$cookie_list = get_option( 'alchemy_consent_cookie_list', array() );
+		$notices     = array();
+		foreach ( $cookie_list as $c ) {
+			if ( empty( $c['high_risk'] ) ) {
+				continue;
+			}
+			$text = ! empty( $c['notice'] ) ? $c['notice'] : ( ! empty( $c['purpose'] ) ? $c['purpose'] : $c['name'] );
+			if ( $text && ! in_array( $text, $notices, true ) ) {
+				$notices[] = $text;
+			}
+		}
+		$this->high_risk_notices = $notices;
+		return $notices;
 	}
 
 	public function enqueue_assets() {
@@ -105,6 +145,8 @@ class Alchemy_Consent_Public {
 					'light_countries'        => ! empty( $settings['light_countries'] )
 						? array_map( 'trim', explode( ',', strtoupper( $settings['light_countries'] ) ) )
 						: array(),
+					'has_high_risk'          => ! empty( $this->get_high_risk_notices() ),
+					'high_risk_notices'      => $this->get_high_risk_notices(),
 				),
 			)
 		);
@@ -118,38 +160,61 @@ class Alchemy_Consent_Public {
 	public function ajax_save_consent() {
 		check_ajax_referer( 'alchemy_consent_nonce', 'nonce' );
 
+		// "general" = the Necessary/Analytics/Marketing decision (drives WP
+		// Consent API). "highrisk" = the separate always-ask session-
+		// recording/chat decision — it must never touch wp_set_consent(),
+		// or a highrisk-only submission would incorrectly overwrite
+		// categories the visitor already granted earlier.
+		$scope = isset( $_POST['scope'] ) ? sanitize_key( wp_unslash( $_POST['scope'] ) ) : 'general';
+		if ( ! in_array( $scope, array( 'general', 'highrisk' ), true ) ) {
+			$scope = 'general';
+		}
+
 		$categories = array();
 		if ( isset( $_POST['categories'] ) && is_array( $_POST['categories'] ) ) {
 			$categories = array_map( 'sanitize_text_field', wp_unslash( $_POST['categories'] ) );
 		}
 		// Allow-list rather than trusting arbitrary posted values — this is
 		// a public, unauthenticated endpoint by necessity (visitors aren't
-		// logged in), so anything beyond the three real categories gets
-		// dropped rather than stored or acted on.
-		$categories = array_intersect( $categories, array( 'necessary', 'analytics', 'marketing' ) );
+		// logged in), so anything beyond the real categories gets dropped
+		// rather than stored or acted on.
+		$categories = array_intersect( $categories, array( 'necessary', 'analytics', 'marketing', 'high_risk' ) );
 
-		// Also enforce this site's categories_enabled setting server-side —
-		// the banner UI only offers a checkbox for enabled categories, but
-		// that's a client-side restriction only; a category disabled for
-		// this site must not be recordable as granted regardless of what a
-		// client sends (a stale cache, a scripted POST, or a client-side bug).
-		$settings_for_gate  = $this->get_settings();
-		$enabled_categories = isset( $settings_for_gate['categories_enabled'] ) ? $settings_for_gate['categories_enabled'] : array();
-		$categories         = array_values(
-			array_filter(
-				$categories,
-				function ( $category ) use ( $enabled_categories ) {
-					return 'necessary' === $category || ! empty( $enabled_categories[ $category ] );
-				}
-			)
-		);
+		if ( 'general' === $scope ) {
+			// Enforce this site's categories_enabled setting server-side —
+			// the banner UI only offers a checkbox for enabled categories,
+			// but that's a client-side restriction only; a category
+			// disabled for this site must not be recordable as granted
+			// regardless of what a client sends (a stale cache, a scripted
+			// POST, or a client-side bug).
+			$settings_for_gate  = $this->get_settings();
+			$enabled_categories = isset( $settings_for_gate['categories_enabled'] ) ? $settings_for_gate['categories_enabled'] : array();
+			$categories         = array_values(
+				array_filter(
+					$categories,
+					function ( $category ) use ( $enabled_categories ) {
+						return 'necessary' === $category || ! empty( $enabled_categories[ $category ] );
+					}
+				)
+			);
 
-		// Push the choice into the WP Consent API. Site Kit reads this and
-		// handles the actual Google Consent Mode v2 signalling itself.
-		if ( function_exists( 'wp_set_consent' ) ) {
-			wp_set_consent( 'necessary', 'allow' );
-			wp_set_consent( 'statistics', in_array( 'analytics', $categories, true ) ? 'allow' : 'deny' );
-			wp_set_consent( 'marketing', in_array( 'marketing', $categories, true ) ? 'allow' : 'deny' );
+			// Push the choice into the WP Consent API. Site Kit reads this
+			// and handles the actual Google Consent Mode v2 signalling.
+			if ( function_exists( 'wp_set_consent' ) ) {
+				wp_set_consent( 'necessary', 'allow' );
+				wp_set_consent( 'statistics', in_array( 'analytics', $categories, true ) ? 'allow' : 'deny' );
+				wp_set_consent( 'marketing', in_array( 'marketing', $categories, true ) ? 'allow' : 'deny' );
+			}
+		} else {
+			// highrisk scope: only 'high_risk' is meaningful here, and only
+			// if the site actually has a high-risk tool configured — mirrors
+			// the client-side has_high_risk gate server-side so a scripted
+			// request can't record a grant for a signal this site never
+			// asked about. wp_set_consent() is deliberately never touched
+			// in this branch.
+			$categories = ( in_array( 'high_risk', $categories, true ) && ! empty( $this->get_high_risk_notices() ) )
+				? array( 'high_risk' )
+				: array();
 		}
 
 		$this->log_consent( $categories );
@@ -165,7 +230,7 @@ class Alchemy_Consent_Public {
 		// already verified by check_ajax_referer() in ajax_save_consent(), the
 		// only caller of this private method; the sniff can't see across methods.
 		$source = isset( $_POST['source'] ) ? sanitize_key( wp_unslash( $_POST['source'] ) ) : 'explicit';
-		if ( ! in_array( $source, array( 'explicit', 'geo-light', 'geo-exempt' ), true ) ) {
+		if ( ! in_array( $source, array( 'explicit', 'geo-light', 'geo-exempt', 'gpc' ), true ) ) {
 			$source = 'explicit';
 		}
 

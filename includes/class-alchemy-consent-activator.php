@@ -178,6 +178,12 @@ class Alchemy_Consent_Activator {
 				'purpose'  => 'Stores your cookie preferences on this site.',
 				'duration' => '6 months',
 			),
+			array(
+				'name'     => 'alchemy_consent_highrisk',
+				'category' => 'necessary',
+				'purpose'  => 'Stores your decision on session-recording/chat tools, where used on this site.',
+				'duration' => '6 months',
+			),
 		);
 
 		add_option( 'alchemy_consent_cookie_list', $default_cookies );

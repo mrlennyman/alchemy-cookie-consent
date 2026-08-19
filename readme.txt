@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, ccpa, cookie banner, consent mode
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.6.6
+Stable tag: 1.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,6 +20,11 @@ Deliberately scoped: no auto cookie scanner (the cookie list is
 hand-maintained per site), no multilingual auto-translation, no IAB TCF.
 Optional geo-targeting (off by default) offers Strict/Light/Exempt
 regional behaviour for sites that want it.
+
+Also includes a High-Risk Consent prompt for session-recording/chat tools
+(independent of geo tier — see "High-Risk Consent" below) and honors
+Global Privacy Control as a valid CCPA/CPRA opt-out signal (see
+"California Privacy (CCPA/CPRA)" below).
 
 == Installation ==
 
@@ -116,27 +121,127 @@ the tag's default trigger.
 == Geo Targeting ==
 
 Off by default — enabling it per site (Geo Targeting tab) is a real
-change in compliance posture, not a cosmetic option. When on:
+change in compliance posture, not a cosmetic option. When on, first-time
+visitors are checked against the Strict and Light country lists via a
+client-side fetch to https://www.cloudflare.com/cdn-cgi/trace (works
+regardless of whether this specific site is on Cloudflare), then sorted
+into one of three tiers:
 
-1. First-time visitors are checked against the Strict country list via
-   a client-side fetch to https://www.cloudflare.com/cdn-cgi/trace
-   (works regardless of whether this specific site is on Cloudflare).
-2. Strict-list country, or detection fails/times out (2.5s) — normal
-   blocking banner, unchanged from non-geo behaviour.
-3. Any other country — banner doesn't block; enabled categories are
-   granted automatically and logged with source "geo-default" (vs.
-   "explicit" for an actual click), with the cookie-settings button
-   available immediately to opt out.
+1. **Strict** — country in the Strict list, or detection fails/times out
+   (2.5s) — normal blocking banner, opt-in required, unchanged from
+   non-geo behaviour. Detection failure always falls back to Strict; it
+   never accidentally relaxes the banner for someone it couldn't identify.
+2. **Light** — country in the Light list (defaults to the whole US,
+   covering the 20 states with opt-out privacy laws — country-level
+   detection can't isolate individual states) — enabled categories are
+   granted automatically and logged with source "geo-light", with the
+   cookie-settings button available immediately to opt out.
+3. **Exempt** — everyone else — enabled categories are granted
+   automatically and logged with source "geo-exempt", with *nothing*
+   shown at all, not even the button. For regions with no consent
+   requirement. (A visitor who sends a Global Privacy Control signal
+   gets the visible opt-out button even in this tier — see "California
+   Privacy (CCPA/CPRA)" below.)
 
 A visitor's own past choice always overrides geo logic on repeat
 visits — this only runs when no consent cookie exists yet.
 
 Default Strict list: EU/EEA + UK + Canada (all provinces, not just
 Quebec — country-level detection can't reliably isolate Quebec, and
-applying Law 25's standard nationwide is the safer default). Edit the
-list per site if a client's situation differs.
+applying Law 25's standard nationwide is the safer default). Edit either
+list per site if a client's situation differs; anything in neither list
+falls through to Exempt.
+
+== High-Risk Consent ==
+
+Session-recording tools (Hotjar, Microsoft Clarity) and live chat
+widgets raise a different legal question from the general Necessary/
+Analytics/Marketing categories: a wave of CIPA (California Invasion of
+Privacy Act, Penal Code §631/632, and more recently the §638.51
+"pen register" theory) lawsuits argue that capturing keystrokes, mouse
+movement, or chat content before a visitor consents is itself
+unauthorized interception — a question of consent *timing*, not
+visitor location. Current case law is genuinely split on whether the
+1967 statute applies to modern web tools; this feature reduces a
+specific, identified risk pattern, it doesn't guarantee anything.
+
+Flag a row "High-risk" on the Cookie List tab (the quick-add presets for
+Hotjar, Clarity, and the generic live-chat entry default to flagged,
+with pre-written visitor notices; Bing UET and Facebook Pixel are left
+unflagged by default, since they're named more loosely in the relevant
+case law — a per-client judgement call either way) and a compact,
+always-ask prompt appears for every visitor, independent of Strict/
+Light/Exempt tier, the first time they're on the site. It never
+overlaps with the main banner — it only ever appears once the main
+banner is out of the way (already decided, or the visitor has an
+existing general consent choice). Declining or accepting is tracked by
+its own cookie (`alchemy_consent_highrisk`) and its own dataLayer signal
+(`alchemy_consent_highrisk`), separate from the general
+Necessary/Analytics/Marketing state — gate a GTM trigger for Hotjar/
+Clarity/chat on this variable, not the general `alchemy_consent_analytics`
+one, even though those tools may also be categorised Analytics for the
+cookie policy table.
+
+== California Privacy (CCPA/CPRA) ==
+
+Two features specifically target California's opt-out (not opt-in)
+privacy framework, on top of the Light geo-tier already covering all US
+traffic by default:
+
+**Global Privacy Control (GPC).** If a visitor's browser or extension
+sends the GPC signal (`navigator.globalPrivacyControl`), it's honored
+immediately as a valid opt-out of sale/sharing — no click required, per
+CPPA guidance. Concretely: it never grants anything (an opt-out signal
+isn't opt-in consent, so Strict-tier visitors still see the normal
+blocking banner and must make an actual choice), it only ever suppresses
+Marketing — the plugin's closest equivalent to CPRA's "sale/sharing"
+concept — everywhere that category would otherwise be auto-granted or
+offered via "Accept All". Logged with source "gpc" in the consent log,
+distinguishable from an actual click.
+
+**`[alchemy_privacy_choices]` shortcode.** Renders a "Your Privacy
+Choices" link with a generic two-tone toggle icon, intended for a
+client's site footer per CPRA's "Do Not Sell or Share My Personal
+Information" expectation. One click immediately opts out (same effect
+as GPC: strips Marketing from whatever's currently granted) without
+needing to reopen and navigate the full banner. The icon rendered is a
+generic approximation, not the official CPPA artwork — swap it for the
+official asset directly in the shortcode's markup if pixel-exact
+regulatory icon match matters for a given client.
+
+Neither feature makes an external request — both are purely a browser
+property read and the same first-party AJAX endpoint every other choice
+already goes through.
 
 == Changelog ==
+
+= 1.7.0 =
+* Added: High-Risk Consent — a separate always-ask prompt for session-
+  recording tools (Hotjar, Clarity) and chat widgets, independent of
+  the Strict/Light/Exempt geo tiers. New Cookie List columns (High-risk
+  checkbox, Visitor notice), a dedicated cookie/dataLayer signal
+  (alchemy_consent_highrisk), and a compact standalone prompt shown
+  only once the main banner is out of the way. See readme "High-Risk
+  Consent" section.
+* Changed: Hotjar and Microsoft Clarity quick-add presets now default
+  to High-risk flagged, with pre-written visitor notices. Bing UET and
+  Facebook Pixel left unflagged by default (named more loosely in the
+  relevant case law) — a per-client judgement call.
+* Added: ajax_save_consent() now takes an explicit "scope" parameter
+  (general vs highrisk) so a High-Risk-only decision can never
+  overwrite a visitor's already-granted Necessary/Analytics/Marketing
+  categories, and can't record a grant for a signal the site never
+  actually asked about.
+* Added: honors Global Privacy Control (navigator.globalPrivacyControl)
+  as a CCPA/CPRA opt-out signal — suppresses Marketing everywhere it
+  would otherwise be auto-granted or offered via Accept All, without
+  requiring a click. Logged with its own "gpc" source.
+* Added: [alchemy_privacy_choices] shortcode — a one-click "Do Not Sell
+  or Share My Personal Information" link for a client's footer, per
+  CPRA. See readme "California Privacy (CCPA/CPRA)" section.
+* Fixed: the Geo Targeting readme section had gone stale describing the
+  old two-tier design and "geo-default" source after the Strict/Light/
+  Exempt split landed in 1.5.0 — rewritten to match current behaviour.
 
 = 1.6.6 =
 * Fixed: the GitHub repo had plugin files nested inside an extra
