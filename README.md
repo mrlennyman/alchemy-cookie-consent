@@ -10,7 +10,7 @@ Self-hosted WordPress cookie consent banner — WP Consent API + Google Consent 
 - Hand-maintained cookie list with a quick-add helper for common services — no automated scanner, no false positives
 - Optional geo-targeting: Strict (opt-in banner), Light (auto-granted, visible opt-out), or Exempt (auto-granted, no UI) by country — off by default
 - Consent log with CSV export for compliance audits
-- `[alchemy_cookie_policy]`, `[alchemy_consent_settings_link]`, and `[alchemy_regulatory_links]` shortcodes
+- `[alchemy_cookie_policy]`, `[alchemy_cookie_consent_settings_link]`, and `[alchemy_regulatory_links]` shortcodes
 
 ## Requirements
 

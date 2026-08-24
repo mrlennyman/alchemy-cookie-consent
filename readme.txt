@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, ccpa, cookie banner, consent mode
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.7.1
+Stable tag: 1.7.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -105,15 +105,15 @@ Site Kit's Consent Mode only signals Google's own tags. For anything
 else routed through GTM, Alchemy Cookie Consent pushes the visitor's
 choice to window.dataLayer as:
 
-  { event: 'alchemy_consent_default' | 'alchemy_consent_update',
-    alchemy_consent_necessary: true,
-    alchemy_consent_analytics: true|false,
-    alchemy_consent_marketing: true|false }
+  { event: 'alchemy_cookie_consent_default' | 'alchemy_cookie_consent_update',
+    alchemy_cookie_consent_necessary: true,
+    alchemy_cookie_consent_analytics: true|false,
+    alchemy_cookie_consent_marketing: true|false }
 
-'alchemy_consent_default' fires immediately on every pageload (existing
-choice, or all-false if none yet). 'alchemy_consent_update' fires when a
+'alchemy_cookie_consent_default' fires immediately on every pageload (existing
+choice, or all-false if none yet). 'alchemy_cookie_consent_update' fires when a
 visitor makes a fresh choice. In GTM: add a Data Layer Variable for
-the relevant alchemy_consent_* key, then a Custom Event trigger listening
+the relevant alchemy_cookie_consent_* key, then a Custom Event trigger listening
 for both event names, gated on that variable being true. Attach it to
 the Bing UET tag (or Facebook Pixel, Hotjar, Clarity, etc.) instead of
 the tag's default trigger.
@@ -175,10 +175,10 @@ Light/Exempt tier, the first time they're on the site. It never
 overlaps with the main banner — it only ever appears once the main
 banner is out of the way (already decided, or the visitor has an
 existing general consent choice). Declining or accepting is tracked by
-its own cookie (`alchemy_consent_highrisk`) and its own dataLayer signal
-(`alchemy_consent_highrisk`), separate from the general
+its own cookie (`alchemy_cookie_consent_highrisk`) and its own dataLayer signal
+(`alchemy_cookie_consent_highrisk`), separate from the general
 Necessary/Analytics/Marketing state — gate a GTM trigger for Hotjar/
-Clarity/chat on this variable, not the general `alchemy_consent_analytics`
+Clarity/chat on this variable, not the general `alchemy_cookie_consent_analytics`
 one, even though those tools may also be categorised Analytics for the
 cookie policy table.
 
@@ -215,11 +215,44 @@ already goes through.
 
 == Changelog ==
 
+= 1.7.2 =
+Full internal rename to match the 1.7.1 display name, now that this
+plugin has no live install/data to preserve compatibility for (unlike
+the 1.6.0 WA Consent -> Alchemy Consent rename, this one ships with no
+migration path — a deliberate choice given the plugin isn't in use yet).
+* Changed: plugin slug/folder and main file (alchemy-consent ->
+  alchemy-cookie-consent), Text Domain, PHP class names (Alchemy_Consent_*
+  -> Alchemy_Cookie_Consent_*), constants (ALCHEMY_CONSENT_* ->
+  ALCHEMY_COOKIE_CONSENT_*).
+* Changed: option names (alchemy_consent_settings, _cookie_list,
+  _db_version -> alchemy_cookie_consent_*), the database table
+  (wp_alchemy_consent_log -> wp_alchemy_cookie_consent_log), and both
+  cookies (alchemy_consent, alchemy_consent_highrisk ->
+  alchemy_cookie_consent, alchemy_cookie_consent_highrisk).
+* Changed: AJAX action, all nonce actions, the localized JS object
+  (alchemyConsentData -> alchemyCookieConsentData), every CSS class and
+  element ID (alchemy-consent-* -> alchemy-cookie-consent-*), and every
+  dataLayer event/variable name (alchemy_consent_default/update/
+  necessary/analytics/marketing/highrisk -> alchemy_cookie_consent_*) —
+  update any GTM triggers already wired to the old variable names.
+* Changed: the [alchemy_consent_settings_link] shortcode is now
+  [alchemy_cookie_consent_settings_link]. [alchemy_cookie_policy],
+  [alchemy_regulatory_links], and [alchemy_privacy_choices] are
+  unchanged — they never contained the old "alchemy_consent" token.
+* Not changed: the GitHub repo is still named "alchemy-consent" (only
+  the plugin's own local slug changed) — rename the repo too via
+  Settings if full consistency there is wanted, and update the URL in
+  the main plugin file's buildUpdateChecker() call to match.
+* Note: no migration path from 1.7.1's data — a site with the old
+  plugin active needs a clean deactivate + delete + fresh install of
+  this version, same as any other slug change. Old options/table are
+  left in place (harmless, unused) rather than auto-migrated.
+
 = 1.7.1 =
 * Changed: display name updated to "Alchemy Cookie Consent" (the
   WordPress admin menu shows the shorter "Cookie Consent" — full name
   on the settings page itself and everywhere else). This is a
-  display-only rename: the plugin slug/folder (alchemy-consent), text
+  display-only rename: the plugin slug/folder (alchemy-cookie-consent), text
   domain, PHP class names, constants, option names, the database table,
   cookie names, shortcode names, the GitHub repo, and the update
   checker's slug are all unchanged, specifically to avoid repeating the
@@ -230,7 +263,7 @@ already goes through.
   recording tools (Hotjar, Clarity) and chat widgets, independent of
   the Strict/Light/Exempt geo tiers. New Cookie List columns (High-risk
   checkbox, Visitor notice), a dedicated cookie/dataLayer signal
-  (alchemy_consent_highrisk), and a compact standalone prompt shown
+  (alchemy_cookie_consent_highrisk), and a compact standalone prompt shown
   only once the main banner is out of the way. See readme "High-Risk
   Consent" section.
 * Changed: Hotjar and Microsoft Clarity quick-add presets now default
@@ -255,9 +288,9 @@ already goes through.
 
 = 1.6.6 =
 * Fixed: the GitHub repo had plugin files nested inside an extra
-  alchemy-consent/ subfolder instead of sitting at the repo root.
+  alchemy-cookie-consent/ subfolder instead of sitting at the repo root.
   Combined with GitHub always wrapping a tag's downloaded zip in its
-  own folder, this put alchemy-consent.php two levels deep, which the
+  own folder, this put alchemy-cookie-consent.php two levels deep, which the
   1.6.5 update attempt failed to install ("The package could not be
   installed") since WordPress's installer only unwraps one wrapping
   folder. Repo restructured so the plugin's files are now directly at
@@ -272,10 +305,10 @@ needing a manual re-upload).
 = 1.6.4 =
 Fixes from an /ultrareview pass on 1.6.3:
 * Fixed: the wp_head dataLayer-bridge script's cookie parse had no
-  try/catch, unlike banner.js's equivalent — a malformed alchemy_consent
+  try/catch, unlike banner.js's equivalent — a malformed alchemy_cookie_consent
   cookie (DevTools edit, a colliding third-party script, a truncating
   proxy) would throw and silently skip the dataLayer.push, blocking every
-  GTM tag gated on alchemy_consent_default (Bing UET, FB Pixel, Hotjar,
+  GTM tag gated on alchemy_cookie_consent_default (Bing UET, FB Pixel, Hotjar,
   Clarity). Now wrapped the same way banner.js already was.
 * Fixed: the 1.6.3 CSV export batching used OFFSET pagination on a table
   that keeps taking live inserts from the public consent-save endpoint
@@ -290,8 +323,8 @@ Fixes from an /ultrareview pass on 1.6.3:
 Cleanup pass — no live "WA Consent" installs exist yet (still in test
 phase), so the remaining renamed-from-WA scaffolding was removed rather
 than kept as permanent backward compatibility:
-* Removed: the wa_consent -> alchemy_consent one-time migration
-  (table rename, option copy) from Alchemy_Consent_Activator — dead
+* Removed: the wa_consent -> alchemy_cookie_consent one-time migration
+  (table rename, option copy) from Alchemy_Cookie_Consent_Activator — dead
   code once every install starts life as Alchemy Consent.
 * Removed: [wa_cookie_policy], [wa_consent_settings_link], and
   [wa_regulatory_links] legacy shortcode aliases. Use the alchemy_
@@ -300,7 +333,7 @@ than kept as permanent backward compatibility:
   `waConsentData` — the one leftover "wa"-prefixed identifier in the
   codebase, despite 1.6.0 renaming everything else specifically
   because WordPress.org flagged "wa" as a restricted term. Renamed to
-  `alchemyConsentData`.
+  `alchemyCookieConsentData`.
 * Fixed: accent_color and revisit_bg_color were saved with
   sanitize_text_field() rather than validated as actual hex colors —
   a malformed value now falls back to the field's default instead of
@@ -375,7 +408,7 @@ and the consent cookie itself) — WordPress.org's Plugin Check flagged
   already-published policy page doesn't need editing. New sites/pages
   should use the alchemy_ prefixed names going forward.
 * Known side effect: the consent cookie itself is renamed
-  (wa_consent -> alchemy_consent), so existing visitors with a saved
+  (wa_consent -> alchemy_cookie_consent), so existing visitors with a saved
   choice will see the banner once more after upgrading — a one-time
   re-prompt, not a data loss.
 * Plugin URI / Author URI updated to https://websitealchemy.com.

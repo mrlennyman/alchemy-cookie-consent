@@ -3,13 +3,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class Alchemy_Consent_Activator {
+class Alchemy_Cookie_Consent_Activator {
 
 	public static function activate() {
 		self::create_log_table();
 		self::seed_default_settings();
 		self::seed_default_cookie_list();
-		update_option( 'alchemy_consent_db_version', ALCHEMY_CONSENT_VERSION );
+		update_option( 'alchemy_cookie_consent_db_version', ALCHEMY_COOKIE_CONSENT_VERSION );
 	}
 
 	/**
@@ -20,14 +20,14 @@ class Alchemy_Consent_Activator {
 	 * keys added in a later version.
 	 */
 	public static function maybe_upgrade() {
-		if ( get_option( 'alchemy_consent_db_version' ) === ALCHEMY_CONSENT_VERSION ) {
+		if ( get_option( 'alchemy_cookie_consent_db_version' ) === ALCHEMY_COOKIE_CONSENT_VERSION ) {
 			return;
 		}
 
 		self::create_log_table(); // dbDelta adds new columns without touching existing rows.
 		self::merge_new_setting_defaults();
 
-		update_option( 'alchemy_consent_db_version', ALCHEMY_CONSENT_VERSION );
+		update_option( 'alchemy_cookie_consent_db_version', ALCHEMY_COOKIE_CONSENT_VERSION );
 	}
 
 	/**
@@ -35,7 +35,7 @@ class Alchemy_Consent_Activator {
 	 * install, without touching values the site already has configured.
 	 */
 	private static function merge_new_setting_defaults() {
-		$settings = get_option( 'alchemy_consent_settings', array() );
+		$settings = get_option( 'alchemy_cookie_consent_settings', array() );
 		$defaults = array(
 			'geo_targeting_enabled' => false, // off by default — never silently changes existing behaviour on upgrade.
 			'strict_countries'      => self::default_strict_countries(),
@@ -45,7 +45,7 @@ class Alchemy_Consent_Activator {
 			'revisit_opacity'       => 55,
 			'revisit_hover_opacity' => 100,
 		);
-		update_option( 'alchemy_consent_settings', array_merge( $defaults, $settings ) );
+		update_option( 'alchemy_cookie_consent_settings', array_merge( $defaults, $settings ) );
 	}
 
 	/**
@@ -74,7 +74,7 @@ class Alchemy_Consent_Activator {
 
 	private static function create_log_table() {
 		global $wpdb;
-		$table           = $wpdb->prefix . 'alchemy_consent_log';
+		$table           = $wpdb->prefix . 'alchemy_cookie_consent_log';
 		$charset_collate = $wpdb->get_charset_collate();
 
 		$sql = "CREATE TABLE $table (
@@ -93,7 +93,7 @@ class Alchemy_Consent_Activator {
 	}
 
 	private static function seed_default_settings() {
-		if ( false !== get_option( 'alchemy_consent_settings' ) ) {
+		if ( false !== get_option( 'alchemy_cookie_consent_settings' ) ) {
 			return;
 		}
 
@@ -118,11 +118,11 @@ class Alchemy_Consent_Activator {
 			),
 		);
 
-		add_option( 'alchemy_consent_settings', $defaults );
+		add_option( 'alchemy_cookie_consent_settings', $defaults );
 	}
 
 	private static function seed_default_cookie_list() {
-		if ( false !== get_option( 'alchemy_consent_cookie_list' ) ) {
+		if ( false !== get_option( 'alchemy_cookie_consent_cookie_list' ) ) {
 			return;
 		}
 
@@ -173,19 +173,19 @@ class Alchemy_Consent_Activator {
 				'duration' => '24 hours',
 			),
 			array(
-				'name'     => 'alchemy_consent',
+				'name'     => 'alchemy_cookie_consent',
 				'category' => 'necessary',
 				'purpose'  => 'Stores your cookie preferences on this site.',
 				'duration' => '6 months',
 			),
 			array(
-				'name'     => 'alchemy_consent_highrisk',
+				'name'     => 'alchemy_cookie_consent_highrisk',
 				'category' => 'necessary',
 				'purpose'  => 'Stores your decision on session-recording/chat tools, where used on this site.',
 				'duration' => '6 months',
 			),
 		);
 
-		add_option( 'alchemy_consent_cookie_list', $default_cookies );
+		add_option( 'alchemy_cookie_consent_cookie_list', $default_cookies );
 	}
 }

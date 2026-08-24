@@ -3,11 +3,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class Alchemy_Consent_Shortcodes {
+class Alchemy_Cookie_Consent_Shortcodes {
 
 	public function __construct() {
 		add_shortcode( 'alchemy_cookie_policy', array( $this, 'render_cookie_table' ) );
-		add_shortcode( 'alchemy_consent_settings_link', array( $this, 'render_settings_link' ) );
+		add_shortcode( 'alchemy_cookie_consent_settings_link', array( $this, 'render_settings_link' ) );
 		add_shortcode( 'alchemy_regulatory_links', array( $this, 'render_regulatory_links' ) );
 		add_shortcode( 'alchemy_privacy_choices', array( $this, 'render_privacy_choices_link' ) );
 	}
@@ -18,7 +18,7 @@ class Alchemy_Consent_Shortcodes {
 	 * way a hand-written policy page can.
 	 */
 	public function render_cookie_table() {
-		$cookies = get_option( 'alchemy_consent_cookie_list', array() );
+		$cookies = get_option( 'alchemy_cookie_consent_cookie_list', array() );
 		if ( empty( $cookies ) ) {
 			return '';
 		}
@@ -39,7 +39,7 @@ class Alchemy_Consent_Shortcodes {
 				continue;
 			}
 			echo '<h3>' . esc_html( $label ) . '</h3>';
-			echo '<table class="alchemy-consent-policy-table"><thead><tr><th>Name</th><th>Purpose</th><th>Duration</th></tr></thead><tbody>';
+			echo '<table class="alchemy-cookie-consent-policy-table"><thead><tr><th>Name</th><th>Purpose</th><th>Duration</th></tr></thead><tbody>';
 			foreach ( $grouped[ $key ] as $c ) {
 				printf(
 					'<tr><td>%s</td><td>%s</td><td>%s</td></tr>',
@@ -55,7 +55,7 @@ class Alchemy_Consent_Shortcodes {
 
 	public function render_settings_link( $atts ) {
 		$atts = shortcode_atts( array( 'label' => 'Cookie Settings' ), $atts );
-		return '<button type="button" class="alchemy-consent-reopen-link" onclick="document.dispatchEvent(new Event(\'alchemy-consent-reopen\'))">' . esc_html( $atts['label'] ) . '</button>';
+		return '<button type="button" class="alchemy-cookie-consent-reopen-link" onclick="document.dispatchEvent(new Event(\'alchemy-cookie-consent-reopen\'))">' . esc_html( $atts['label'] ) . '</button>';
 	}
 
 	/**
@@ -71,7 +71,7 @@ class Alchemy_Consent_Shortcodes {
 	public function render_privacy_choices_link( $atts ) {
 		$atts = shortcode_atts( array( 'label' => 'Your Privacy Choices' ), $atts );
 		$icon = '<svg width="20" height="12" viewBox="0 0 20 12" aria-hidden="true" focusable="false" style="vertical-align:middle;margin-right:6px;"><rect x="0" y="0" width="20" height="12" rx="6" fill="#000"/><rect x="0" y="0" width="10" height="12" rx="6" fill="#06f"/><circle cx="14" cy="6" r="4.5" fill="#fff"/></svg>';
-		return '<button type="button" class="alchemy-consent-privacy-choices" onclick="document.dispatchEvent(new Event(\'alchemy-consent-optout\'))">' . $icon . esc_html( $atts['label'] ) . '</button>';
+		return '<button type="button" class="alchemy-cookie-consent-privacy-choices" onclick="document.dispatchEvent(new Event(\'alchemy-cookie-consent-optout\'))">' . $icon . esc_html( $atts['label'] ) . '</button>';
 	}
 
 	/**
@@ -123,7 +123,7 @@ class Alchemy_Consent_Shortcodes {
 
 	public function render_regulatory_links() {
 		ob_start();
-		echo '<table class="alchemy-consent-policy-table"><thead><tr><th>Region</th><th>Authority</th><th>Note</th></tr></thead><tbody>';
+		echo '<table class="alchemy-cookie-consent-policy-table"><thead><tr><th>Region</th><th>Authority</th><th>Note</th></tr></thead><tbody>';
 		foreach ( $this->get_regulatory_authorities() as $a ) {
 			printf(
 				'<tr><td>%s</td><td><a href="%s" target="_blank" rel="noopener">%s</a></td><td>%s</td></tr>',

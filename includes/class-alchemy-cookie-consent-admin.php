@@ -3,19 +3,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class Alchemy_Consent_Admin {
+class Alchemy_Cookie_Consent_Admin {
 
 	public function __construct() {
 		add_action( 'admin_menu', array( $this, 'add_menu' ) );
-		add_action( 'admin_post_alchemy_consent_save_general', array( $this, 'save_general' ) );
-		add_action( 'admin_post_alchemy_consent_save_categories', array( $this, 'save_categories' ) );
-		add_action( 'admin_post_alchemy_consent_save_cookies', array( $this, 'save_cookies' ) );
-		add_action( 'admin_post_alchemy_consent_export_log', array( $this, 'export_log' ) );
-		add_action( 'admin_post_alchemy_consent_save_geo', array( $this, 'save_geo' ) );
+		add_action( 'admin_post_alchemy_cookie_consent_save_general', array( $this, 'save_general' ) );
+		add_action( 'admin_post_alchemy_cookie_consent_save_categories', array( $this, 'save_categories' ) );
+		add_action( 'admin_post_alchemy_cookie_consent_save_cookies', array( $this, 'save_cookies' ) );
+		add_action( 'admin_post_alchemy_cookie_consent_export_log', array( $this, 'export_log' ) );
+		add_action( 'admin_post_alchemy_cookie_consent_save_geo', array( $this, 'save_geo' ) );
 	}
 
 	public function add_menu() {
-		add_menu_page( 'Alchemy Cookie Consent', 'Cookie Consent', 'manage_options', 'alchemy-consent', array( $this, 'render_page' ), 'dashicons-shield', 58 );
+		add_menu_page( 'Alchemy Cookie Consent', 'Cookie Consent', 'manage_options', 'alchemy-cookie-consent', array( $this, 'render_page' ), 'dashicons-shield', 58 );
 	}
 
 	/**
@@ -25,7 +25,7 @@ class Alchemy_Consent_Admin {
 	private function verify_admin_request( $action ) {
 		check_admin_referer( $action );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to do this.', 'alchemy-consent' ) );
+			wp_die( esc_html__( 'You do not have permission to do this.', 'alchemy-cookie-consent' ) );
 		}
 	}
 
@@ -33,7 +33,7 @@ class Alchemy_Consent_Admin {
 	 * Shared post-save redirect back to a tab on this settings page.
 	 */
 	private function redirect_to_tab( $tab ) {
-		wp_safe_redirect( add_query_arg( array( 'page' => 'alchemy-consent', 'tab' => $tab, 'updated' => '1' ), admin_url( 'admin.php' ) ) );
+		wp_safe_redirect( add_query_arg( array( 'page' => 'alchemy-cookie-consent', 'tab' => $tab, 'updated' => '1' ), admin_url( 'admin.php' ) ) );
 		exit;
 	}
 
@@ -81,7 +81,7 @@ class Alchemy_Consent_Admin {
 			$class = ( $tab === $key ) ? ' nav-tab-active' : '';
 			printf(
 				'<a href="%s" class="nav-tab%s">%s</a>',
-				esc_url( add_query_arg( array( 'page' => 'alchemy-consent', 'tab' => $key ), admin_url( 'admin.php' ) ) ),
+				esc_url( add_query_arg( array( 'page' => 'alchemy-cookie-consent', 'tab' => $key ), admin_url( 'admin.php' ) ) ),
 				esc_attr( $class ),
 				esc_html( $label )
 			);
@@ -109,11 +109,11 @@ class Alchemy_Consent_Admin {
 	}
 
 	private function render_general_tab() {
-		$settings = get_option( 'alchemy_consent_settings' );
+		$settings = get_option( 'alchemy_cookie_consent_settings' );
 		?>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-			<input type="hidden" name="action" value="alchemy_consent_save_general">
-			<?php wp_nonce_field( 'alchemy_consent_save_general' ); ?>
+			<input type="hidden" name="action" value="alchemy_cookie_consent_save_general">
+			<?php wp_nonce_field( 'alchemy_cookie_consent_save_general' ); ?>
 			<table class="form-table">
 				<tr>
 					<th><label for="banner_message">Banner message</label></th>
@@ -177,11 +177,11 @@ class Alchemy_Consent_Admin {
 	}
 
 	private function render_categories_tab() {
-		$settings = get_option( 'alchemy_consent_settings' );
+		$settings = get_option( 'alchemy_cookie_consent_settings' );
 		?>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-			<input type="hidden" name="action" value="alchemy_consent_save_categories">
-			<?php wp_nonce_field( 'alchemy_consent_save_categories' ); ?>
+			<input type="hidden" name="action" value="alchemy_cookie_consent_save_categories">
+			<?php wp_nonce_field( 'alchemy_cookie_consent_save_categories' ); ?>
 			<table class="form-table">
 				<tr>
 					<th>Necessary</th>
@@ -202,9 +202,9 @@ class Alchemy_Consent_Admin {
 	}
 
 	private function render_geo_tab() {
-		$settings = get_option( 'alchemy_consent_settings' );
-		$strict   = isset( $settings['strict_countries'] ) ? $settings['strict_countries'] : Alchemy_Consent_Activator::default_strict_countries();
-		$light    = isset( $settings['light_countries'] ) ? $settings['light_countries'] : Alchemy_Consent_Activator::default_light_countries();
+		$settings = get_option( 'alchemy_cookie_consent_settings' );
+		$strict   = isset( $settings['strict_countries'] ) ? $settings['strict_countries'] : Alchemy_Cookie_Consent_Activator::default_strict_countries();
+		$light    = isset( $settings['light_countries'] ) ? $settings['light_countries'] : Alchemy_Cookie_Consent_Activator::default_light_countries();
 		?>
 		<p>When enabled, first-time visitors are checked against these lists before the banner decides how to behave:</p>
 		<ul style="list-style: disc; margin-left: 20px;">
@@ -214,8 +214,8 @@ class Alchemy_Consent_Admin {
 		</ul>
 		<p class="description">Detection failure always falls back to Strict — it never accidentally relaxes the banner for someone it couldn't identify.</p>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-			<input type="hidden" name="action" value="alchemy_consent_save_geo">
-			<?php wp_nonce_field( 'alchemy_consent_save_geo' ); ?>
+			<input type="hidden" name="action" value="alchemy_cookie_consent_save_geo">
+			<?php wp_nonce_field( 'alchemy_cookie_consent_save_geo' ); ?>
 			<table class="form-table">
 				<tr>
 					<th>Enable geo-targeting</th>
@@ -242,25 +242,25 @@ class Alchemy_Consent_Admin {
 	}
 
 	private function render_cookies_tab() {
-		$cookies = get_option( 'alchemy_consent_cookie_list', array() );
+		$cookies = get_option( 'alchemy_cookie_consent_cookie_list', array() );
 		?>
 		<p>This list drives the <code>[alchemy_cookie_policy]</code> shortcode on your policy page. Add or edit rows for whatever this site actually runs.</p>
 		<p class="description">"High-risk" tools (session recording, live chat) get their own always-on consent prompt shown to every visitor regardless of geo-targeting tier — separate from the Necessary/Analytics/Marketing categories above, since the legal question for those tools (CIPA-style "wiretap" risk) turns on consent timing, not visitor location.</p>
 		<p>
-			<label for="alchemy-consent-common-service">Quick-add a common service:</label>
-			<select id="alchemy-consent-common-service">
+			<label for="alchemy-cookie-consent-common-service">Quick-add a common service:</label>
+			<select id="alchemy-cookie-consent-common-service">
 				<option value="">— Select —</option>
 				<?php foreach ( $this->get_common_services() as $key => $svc ) : ?>
 					<option value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $svc['label'] ); ?></option>
 				<?php endforeach; ?>
 			</select>
-			<button type="button" class="button" id="alchemy-consent-add-common">Add</button>
+			<button type="button" class="button" id="alchemy-cookie-consent-add-common">Add</button>
 			<span class="description"> — fills in the row with the standard category/purpose so it isn't re-researched per client; edit before saving if this client's use differs.</span>
 		</p>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-			<input type="hidden" name="action" value="alchemy_consent_save_cookies">
-			<?php wp_nonce_field( 'alchemy_consent_save_cookies' ); ?>
-			<table class="widefat" id="alchemy-consent-cookie-table">
+			<input type="hidden" name="action" value="alchemy_cookie_consent_save_cookies">
+			<?php wp_nonce_field( 'alchemy_cookie_consent_save_cookies' ); ?>
+			<table class="widefat" id="alchemy-cookie-consent-cookie-table">
 				<thead>
 					<tr><th>Cookie name</th><th>Category</th><th>Purpose</th><th>Duration</th><th>High-risk</th><th>Visitor notice</th><th></th></tr>
 				</thead>
@@ -279,12 +279,12 @@ class Alchemy_Consent_Admin {
 						<td><input type="text" name="cookies[<?php echo (int) $i; ?>][duration]" value="<?php echo esc_attr( $c['duration'] ); ?>" class="small-text"></td>
 						<td style="text-align:center;"><input type="checkbox" name="cookies[<?php echo (int) $i; ?>][high_risk]" value="1" <?php checked( ! empty( $c['high_risk'] ) ); ?>></td>
 						<td><input type="text" name="cookies[<?php echo (int) $i; ?>][notice]" value="<?php echo esc_attr( isset( $c['notice'] ) ? $c['notice'] : '' ); ?>" class="regular-text" placeholder="Shown to visitors if High-risk is checked"></td>
-						<td><button type="button" class="button alchemy-consent-remove-row">Remove</button></td>
+						<td><button type="button" class="button alchemy-cookie-consent-remove-row">Remove</button></td>
 					</tr>
 				<?php endforeach; ?>
 				</tbody>
 			</table>
-			<p><button type="button" class="button" id="alchemy-consent-add-row">+ Add cookie</button></p>
+			<p><button type="button" class="button" id="alchemy-cookie-consent-add-row">+ Add cookie</button></p>
 			<?php submit_button( 'Save Cookie List' ); ?>
 		</form>
 		<script>
@@ -292,7 +292,7 @@ class Alchemy_Consent_Admin {
 			var commonServices = <?php echo wp_json_encode( $this->get_common_services() ); ?>;
 
 			function addRow( prefill ) {
-				var tbody = document.querySelector( '#alchemy-consent-cookie-table tbody' );
+				var tbody = document.querySelector( '#alchemy-cookie-consent-cookie-table tbody' );
 				var i = tbody.children.length;
 				var name = prefill ? prefill.name : '';
 				var category = prefill ? prefill.category : 'necessary';
@@ -312,22 +312,22 @@ class Alchemy_Consent_Admin {
 					'<td><input type="text" name="cookies[' + i + '][duration]" value="' + duration + '" class="small-text"></td>' +
 					'<td style="text-align:center;"><input type="checkbox" name="cookies[' + i + '][high_risk]" value="1"' + ( highRisk ? ' checked' : '' ) + '></td>' +
 					'<td><input type="text" name="cookies[' + i + '][notice]" value="' + notice + '" class="regular-text" placeholder="Shown to visitors if High-risk is checked"></td>' +
-					'<td><button type="button" class="button alchemy-consent-remove-row">Remove</button></td>';
+					'<td><button type="button" class="button alchemy-cookie-consent-remove-row">Remove</button></td>';
 				tbody.appendChild( row );
 			}
 
-			document.getElementById( 'alchemy-consent-add-common' ).addEventListener( 'click', function () {
-				var key = document.getElementById( 'alchemy-consent-common-service' ).value;
+			document.getElementById( 'alchemy-cookie-consent-add-common' ).addEventListener( 'click', function () {
+				var key = document.getElementById( 'alchemy-cookie-consent-common-service' ).value;
 				if ( key && commonServices[ key ] ) {
 					addRow( commonServices[ key ] );
 				}
 			} );
 
-			document.getElementById( 'alchemy-consent-add-row' ).addEventListener( 'click', function () {
+			document.getElementById( 'alchemy-cookie-consent-add-row' ).addEventListener( 'click', function () {
 				addRow( null );
 			} );
 			document.addEventListener( 'click', function ( e ) {
-				if ( e.target.classList.contains( 'alchemy-consent-remove-row' ) ) {
+				if ( e.target.classList.contains( 'alchemy-cookie-consent-remove-row' ) ) {
 					e.target.closest( 'tr' ).remove();
 				}
 			} );
@@ -357,7 +357,7 @@ class Alchemy_Consent_Admin {
 				'label'     => 'Bing UET (Microsoft Ads)',
 				'name'      => '_uetsid / _uetvid',
 				'category'  => 'marketing',
-				'purpose'   => 'Microsoft Bing Ads — tracks conversions and enables remarketing. Not supported by Site Kit; needs a GTM tag wired to the alchemy_consent_marketing signal.',
+				'purpose'   => 'Microsoft Bing Ads — tracks conversions and enables remarketing. Not supported by Site Kit; needs a GTM tag wired to the alchemy_cookie_consent_marketing signal.',
 				'duration'  => 'Session / 13 months',
 				'high_risk' => false,
 				'notice'    => '',
@@ -403,12 +403,12 @@ class Alchemy_Consent_Admin {
 
 	private function render_log_tab() {
 		global $wpdb;
-		$table = $wpdb->prefix . 'alchemy_consent_log';
+		$table = $wpdb->prefix . 'alchemy_cookie_consent_log';
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- this plugin's own table; a live consent-audit listing shouldn't be cached.
 		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i ORDER BY consent_time DESC LIMIT %d', $table, 200 ) );
 		?>
 		<p>
-			<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=alchemy_consent_export_log' ), 'alchemy_consent_export_log' ) ); ?>" class="button">Export CSV</a>
+			<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=alchemy_cookie_consent_export_log' ), 'alchemy_cookie_consent_export_log' ) ); ?>" class="button">Export CSV</a>
 			<span class="description"> — showing the most recent 200 records; export for the full log.</span>
 		</p>
 		<table class="widefat striped">
@@ -432,9 +432,9 @@ class Alchemy_Consent_Admin {
 	}
 
 	public function save_geo() {
-		$this->verify_admin_request( 'alchemy_consent_save_geo' );
+		$this->verify_admin_request( 'alchemy_cookie_consent_save_geo' );
 
-		$settings                          = get_option( 'alchemy_consent_settings' );
+		$settings                          = get_option( 'alchemy_cookie_consent_settings' );
 		$settings['geo_targeting_enabled'] = ! empty( $_POST['geo_targeting_enabled'] );
 
 		// A submitted-but-empty field (e.g. the textarea got cleared before
@@ -443,19 +443,19 @@ class Alchemy_Consent_Admin {
 		// relaxes the banner everywhere, the opposite of "never accidentally
 		// relax" that geo-targeting is built around.
 		$strict_input                 = isset( $_POST['strict_countries'] ) ? sanitize_text_field( wp_unslash( $_POST['strict_countries'] ) ) : '';
-		$settings['strict_countries'] = '' !== $strict_input ? strtoupper( $strict_input ) : Alchemy_Consent_Activator::default_strict_countries();
+		$settings['strict_countries'] = '' !== $strict_input ? strtoupper( $strict_input ) : Alchemy_Cookie_Consent_Activator::default_strict_countries();
 
 		$light_input                  = isset( $_POST['light_countries'] ) ? sanitize_text_field( wp_unslash( $_POST['light_countries'] ) ) : '';
-		$settings['light_countries']  = '' !== $light_input ? strtoupper( $light_input ) : Alchemy_Consent_Activator::default_light_countries();
+		$settings['light_countries']  = '' !== $light_input ? strtoupper( $light_input ) : Alchemy_Cookie_Consent_Activator::default_light_countries();
 
-		update_option( 'alchemy_consent_settings', $settings );
+		update_option( 'alchemy_cookie_consent_settings', $settings );
 		$this->redirect_to_tab( 'geo' );
 	}
 
 	public function save_general() {
-		$this->verify_admin_request( 'alchemy_consent_save_general' );
+		$this->verify_admin_request( 'alchemy_cookie_consent_save_general' );
 
-		$settings                    = get_option( 'alchemy_consent_settings' );
+		$settings                    = get_option( 'alchemy_cookie_consent_settings' );
 		$settings['banner_message']  = isset( $_POST['banner_message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['banner_message'] ) ) : '';
 		$settings['accept_label']    = isset( $_POST['accept_label'] ) ? sanitize_text_field( wp_unslash( $_POST['accept_label'] ) ) : 'Accept All';
 		$settings['reject_label']    = isset( $_POST['reject_label'] ) ? sanitize_text_field( wp_unslash( $_POST['reject_label'] ) ) : 'Reject All';
@@ -466,23 +466,23 @@ class Alchemy_Consent_Admin {
 		$settings['revisit_opacity']       = isset( $_POST['revisit_opacity'] ) ? max( 0, min( 100, absint( $_POST['revisit_opacity'] ) ) ) : 55;
 		$settings['revisit_hover_opacity'] = isset( $_POST['revisit_hover_opacity'] ) ? max( 0, min( 100, absint( $_POST['revisit_hover_opacity'] ) ) ) : 100;
 
-		update_option( 'alchemy_consent_settings', $settings );
+		update_option( 'alchemy_cookie_consent_settings', $settings );
 		$this->redirect_to_tab( 'general' );
 	}
 
 	public function save_categories() {
-		$this->verify_admin_request( 'alchemy_consent_save_categories' );
+		$this->verify_admin_request( 'alchemy_cookie_consent_save_categories' );
 
-		$settings                                     = get_option( 'alchemy_consent_settings' );
+		$settings                                     = get_option( 'alchemy_cookie_consent_settings' );
 		$settings['categories_enabled']['analytics']  = ! empty( $_POST['cat_analytics'] );
 		$settings['categories_enabled']['marketing']  = ! empty( $_POST['cat_marketing'] );
 
-		update_option( 'alchemy_consent_settings', $settings );
+		update_option( 'alchemy_cookie_consent_settings', $settings );
 		$this->redirect_to_tab( 'categories' );
 	}
 
 	public function save_cookies() {
-		$this->verify_admin_request( 'alchemy_consent_save_cookies' );
+		$this->verify_admin_request( 'alchemy_cookie_consent_save_cookies' );
 
 		$cookies      = array();
 		$cookies_post = isset( $_POST['cookies'] ) ? wp_unslash( $_POST['cookies'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- unslashed here; every field is individually sanitized in the loop below before use.
@@ -501,18 +501,18 @@ class Alchemy_Consent_Admin {
 			);
 		}
 
-		update_option( 'alchemy_consent_cookie_list', $cookies );
+		update_option( 'alchemy_cookie_consent_cookie_list', $cookies );
 		$this->redirect_to_tab( 'cookies' );
 	}
 
 	public function export_log() {
-		$this->verify_admin_request( 'alchemy_consent_export_log' );
+		$this->verify_admin_request( 'alchemy_cookie_consent_export_log' );
 
 		global $wpdb;
-		$table = $wpdb->prefix . 'alchemy_consent_log';
+		$table = $wpdb->prefix . 'alchemy_cookie_consent_log';
 
 		header( 'Content-Type: text/csv' );
-		header( 'Content-Disposition: attachment; filename="alchemy-consent-log.csv"' );
+		header( 'Content-Disposition: attachment; filename="alchemy-cookie-consent-log.csv"' );
 
 		// phpcs:disable WordPress.WP.AlternativeFunctions -- streaming a CSV to
 		// the browser via php://output, not writing to a file on disk, so the

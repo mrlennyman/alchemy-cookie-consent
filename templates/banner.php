@@ -32,48 +32,48 @@ $alchemy_revisit_color    = isset( $settings['revisit_bg_color'] ) ? $settings['
 $alchemy_revisit_bg       = $alchemy_hex_to_rgba( $alchemy_revisit_color, isset( $settings['revisit_opacity'] ) ? $settings['revisit_opacity'] : 55 );
 $alchemy_revisit_bg_hover = $alchemy_hex_to_rgba( $alchemy_revisit_color, isset( $settings['revisit_hover_opacity'] ) ? $settings['revisit_hover_opacity'] : 100 );
 ?>
-<div id="alchemy-consent-banner" class="alchemy-consent-banner alchemy-consent-hidden" style="--alchemy-consent-accent: <?php echo esc_attr( $settings['accent_color'] ); ?>;">
-	<div class="alchemy-consent-inner">
-		<p class="alchemy-consent-message">
+<div id="alchemy-cookie-consent-banner" class="alchemy-cookie-consent-banner alchemy-cookie-consent-hidden" style="--alchemy-cookie-consent-accent: <?php echo esc_attr( $settings['accent_color'] ); ?>;">
+	<div class="alchemy-cookie-consent-inner">
+		<p class="alchemy-cookie-consent-message">
 			<?php echo esc_html( $settings['banner_message'] ); ?>
 			<?php if ( $alchemy_policy_url ) : ?>
-				<a href="<?php echo esc_url( $alchemy_policy_url ); ?>" class="alchemy-consent-policy-link" target="_blank" rel="noopener">Learn more</a>
+				<a href="<?php echo esc_url( $alchemy_policy_url ); ?>" class="alchemy-cookie-consent-policy-link" target="_blank" rel="noopener">Learn more</a>
 			<?php endif; ?>
 		</p>
 
-		<div class="alchemy-consent-categories" hidden>
+		<div class="alchemy-cookie-consent-categories" hidden>
 			<label><input type="checkbox" checked disabled> Necessary</label>
 			<?php if ( $alchemy_show_analytics ) : ?>
-				<label><input type="checkbox" id="alchemy-consent-analytics"> Analytics</label>
+				<label><input type="checkbox" id="alchemy-cookie-consent-analytics"> Analytics</label>
 			<?php endif; ?>
 			<?php if ( $alchemy_show_marketing ) : ?>
-				<label><input type="checkbox" id="alchemy-consent-marketing"> Marketing</label>
+				<label><input type="checkbox" id="alchemy-cookie-consent-marketing"> Marketing</label>
 			<?php endif; ?>
 		</div>
 
-		<div class="alchemy-consent-actions">
-			<button type="button" id="alchemy-consent-customize" class="alchemy-consent-btn alchemy-consent-btn-text"><?php echo esc_html( $settings['customize_label'] ); ?></button>
-			<button type="button" id="alchemy-consent-reject" class="alchemy-consent-btn alchemy-consent-btn-outline"><?php echo esc_html( $settings['reject_label'] ); ?></button>
-			<button type="button" id="alchemy-consent-accept" class="alchemy-consent-btn alchemy-consent-btn-solid"><?php echo esc_html( $settings['accept_label'] ); ?></button>
-			<button type="button" id="alchemy-consent-save" class="alchemy-consent-btn alchemy-consent-btn-solid" hidden><?php echo esc_html( $settings['save_label'] ); ?></button>
+		<div class="alchemy-cookie-consent-actions">
+			<button type="button" id="alchemy-cookie-consent-customize" class="alchemy-cookie-consent-btn alchemy-cookie-consent-btn-text"><?php echo esc_html( $settings['customize_label'] ); ?></button>
+			<button type="button" id="alchemy-cookie-consent-reject" class="alchemy-cookie-consent-btn alchemy-cookie-consent-btn-outline"><?php echo esc_html( $settings['reject_label'] ); ?></button>
+			<button type="button" id="alchemy-cookie-consent-accept" class="alchemy-cookie-consent-btn alchemy-cookie-consent-btn-solid"><?php echo esc_html( $settings['accept_label'] ); ?></button>
+			<button type="button" id="alchemy-cookie-consent-save" class="alchemy-cookie-consent-btn alchemy-cookie-consent-btn-solid" hidden><?php echo esc_html( $settings['save_label'] ); ?></button>
 		</div>
 	</div>
 </div>
-<button type="button" id="alchemy-consent-revisit" class="alchemy-consent-revisit" aria-label="Cookie settings" hidden style="--alchemy-consent-revisit-bg: <?php echo esc_attr( $alchemy_revisit_bg ); ?>; --alchemy-consent-revisit-bg-hover: <?php echo esc_attr( $alchemy_revisit_bg_hover ); ?>;">&#127850;</button>
+<button type="button" id="alchemy-cookie-consent-revisit" class="alchemy-cookie-consent-revisit" aria-label="Cookie settings" hidden style="--alchemy-cookie-consent-revisit-bg: <?php echo esc_attr( $alchemy_revisit_bg ); ?>; --alchemy-cookie-consent-revisit-bg-hover: <?php echo esc_attr( $alchemy_revisit_bg_hover ); ?>;">&#127850;</button>
 
 <!--
 Standalone compact prompt for session-recording/chat-type tools. Shown
 independently of the main banner above — it applies to every visitor
-regardless of Strict/Light/Exempt tier (see class-alchemy-consent-public.php
+regardless of Strict/Light/Exempt tier (see class-alchemy-cookie-consent-public.php
 for why this sits outside the geo-tier system), and only appears at all
 if the Cookie List has at least one row flagged High-risk.
 -->
-<div id="alchemy-consent-highrisk-banner" class="alchemy-consent-banner alchemy-consent-highrisk-banner alchemy-consent-hidden" style="--alchemy-consent-accent: <?php echo esc_attr( $settings['accent_color'] ); ?>;">
-	<div class="alchemy-consent-inner">
-		<p class="alchemy-consent-message" id="alchemy-consent-highrisk-standalone-message"></p>
-		<div class="alchemy-consent-actions">
-			<button type="button" id="alchemy-consent-highrisk-decline" class="alchemy-consent-btn alchemy-consent-btn-outline">No Thanks</button>
-			<button type="button" id="alchemy-consent-highrisk-accept" class="alchemy-consent-btn alchemy-consent-btn-solid">I Agree</button>
+<div id="alchemy-cookie-consent-highrisk-banner" class="alchemy-cookie-consent-banner alchemy-cookie-consent-highrisk-banner alchemy-cookie-consent-hidden" style="--alchemy-cookie-consent-accent: <?php echo esc_attr( $settings['accent_color'] ); ?>;">
+	<div class="alchemy-cookie-consent-inner">
+		<p class="alchemy-cookie-consent-message" id="alchemy-cookie-consent-highrisk-standalone-message"></p>
+		<div class="alchemy-cookie-consent-actions">
+			<button type="button" id="alchemy-cookie-consent-highrisk-decline" class="alchemy-cookie-consent-btn alchemy-cookie-consent-btn-outline">No Thanks</button>
+			<button type="button" id="alchemy-cookie-consent-highrisk-accept" class="alchemy-cookie-consent-btn alchemy-cookie-consent-btn-solid">I Agree</button>
 		</div>
 	</div>
 </div>

@@ -1,11 +1,11 @@
 (function () {
 	'use strict';
 
-	var COOKIE_NAME = 'alchemy_consent';
-	var HIGH_RISK_COOKIE_NAME = 'alchemy_consent_highrisk';
-	var banner = document.getElementById( 'alchemy-consent-banner' );
-	var revisitBtn = document.getElementById( 'alchemy-consent-revisit' );
-	var highRiskBanner = document.getElementById( 'alchemy-consent-highrisk-banner' );
+	var COOKIE_NAME = 'alchemy_cookie_consent';
+	var HIGH_RISK_COOKIE_NAME = 'alchemy_cookie_consent_highrisk';
+	var banner = document.getElementById( 'alchemy-cookie-consent-banner' );
+	var revisitBtn = document.getElementById( 'alchemy-cookie-consent-revisit' );
+	var highRiskBanner = document.getElementById( 'alchemy-cookie-consent-highrisk-banner' );
 
 	if ( ! banner ) {
 		return;
@@ -62,10 +62,10 @@
 
 	function enabledCategories() {
 		var cats = [ 'necessary' ];
-		if ( alchemyConsentData.settings.categories_enabled.analytics ) {
+		if ( alchemyCookieConsentData.settings.categories_enabled.analytics ) {
 			cats.push( 'analytics' );
 		}
-		if ( alchemyConsentData.settings.categories_enabled.marketing && ! gpcOptOut() ) {
+		if ( alchemyCookieConsentData.settings.categories_enabled.marketing && ! gpcOptOut() ) {
 			cats.push( 'marketing' );
 		}
 		return cats;
@@ -79,15 +79,15 @@
 		// whether it's the pre-existing choice or a fresh one just made.
 		window.dataLayer = window.dataLayer || [];
 		window.dataLayer.push( {
-			event: 'alchemy_consent_update',
-			alchemy_consent_necessary: true,
-			alchemy_consent_analytics: categories.indexOf( 'analytics' ) !== -1,
-			alchemy_consent_marketing: categories.indexOf( 'marketing' ) !== -1,
+			event: 'alchemy_cookie_consent_update',
+			alchemy_cookie_consent_necessary: true,
+			alchemy_cookie_consent_analytics: categories.indexOf( 'analytics' ) !== -1,
+			alchemy_cookie_consent_marketing: categories.indexOf( 'marketing' ) !== -1,
 		} );
 
 		var body = new URLSearchParams();
-		body.append( 'action', 'alchemy_consent_save' );
-		body.append( 'nonce', alchemyConsentData.nonce );
+		body.append( 'action', 'alchemy_cookie_consent_save' );
+		body.append( 'nonce', alchemyCookieConsentData.nonce );
 		body.append( 'page_url', window.location.href );
 		body.append( 'source', source || 'explicit' );
 		body.append( 'scope', 'general' );
@@ -95,13 +95,13 @@
 			body.append( 'categories[]', c );
 		} );
 
-		fetch( alchemyConsentData.ajaxUrl, {
+		fetch( alchemyCookieConsentData.ajaxUrl, {
 			method: 'POST',
 			body: body,
 			credentials: 'same-origin',
 		} );
 
-		banner.classList.add( 'alchemy-consent-hidden' );
+		banner.classList.add( 'alchemy-cookie-consent-hidden' );
 		// Exempt-tier auto-accept passes revealButton=false — no visible
 		// affordance at all for regions with no consent requirement,
 		// distinct from Light, which still surfaces the opt-out button.
@@ -129,21 +129,21 @@
 		if ( ! highRiskBanner ) {
 			return;
 		}
-		if ( ! alchemyConsentData.settings.has_high_risk ) {
+		if ( ! alchemyCookieConsentData.settings.has_high_risk ) {
 			return;
 		}
 		if ( getCookie( HIGH_RISK_COOKIE_NAME ) ) {
 			return;
 		}
-		var notices = alchemyConsentData.settings.high_risk_notices || [];
+		var notices = alchemyCookieConsentData.settings.high_risk_notices || [];
 		if ( ! notices.length ) {
 			return;
 		}
-		var msg = document.getElementById( 'alchemy-consent-highrisk-standalone-message' );
+		var msg = document.getElementById( 'alchemy-cookie-consent-highrisk-standalone-message' );
 		if ( msg ) {
 			msg.textContent = notices.join( ' ' );
 		}
-		highRiskBanner.classList.remove( 'alchemy-consent-hidden' );
+		highRiskBanner.classList.remove( 'alchemy-cookie-consent-hidden' );
 	}
 
 	function saveHighRiskConsent( granted ) {
@@ -151,13 +151,13 @@
 
 		window.dataLayer = window.dataLayer || [];
 		window.dataLayer.push( {
-			event: 'alchemy_consent_highrisk_update',
-			alchemy_consent_highrisk: granted,
+			event: 'alchemy_cookie_consent_highrisk_update',
+			alchemy_cookie_consent_highrisk: granted,
 		} );
 
 		var body = new URLSearchParams();
-		body.append( 'action', 'alchemy_consent_save' );
-		body.append( 'nonce', alchemyConsentData.nonce );
+		body.append( 'action', 'alchemy_cookie_consent_save' );
+		body.append( 'nonce', alchemyCookieConsentData.nonce );
 		body.append( 'page_url', window.location.href );
 		body.append( 'source', 'explicit' );
 		body.append( 'scope', 'highrisk' );
@@ -165,17 +165,17 @@
 			body.append( 'categories[]', 'high_risk' );
 		}
 
-		fetch( alchemyConsentData.ajaxUrl, {
+		fetch( alchemyCookieConsentData.ajaxUrl, {
 			method: 'POST',
 			body: body,
 			credentials: 'same-origin',
 		} );
 
-		highRiskBanner.classList.add( 'alchemy-consent-hidden' );
+		highRiskBanner.classList.add( 'alchemy-cookie-consent-hidden' );
 	}
 
 	function openBanner() {
-		banner.classList.remove( 'alchemy-consent-hidden' );
+		banner.classList.remove( 'alchemy-cookie-consent-hidden' );
 	}
 
 	/**
@@ -220,14 +220,14 @@
 			return;
 		}
 
-		if ( ! alchemyConsentData.settings.geo_targeting_enabled ) {
+		if ( ! alchemyCookieConsentData.settings.geo_targeting_enabled ) {
 			openBanner();
 			return;
 		}
 
 		detectCountry().then( function ( country ) {
-			var strict = alchemyConsentData.settings.strict_countries || [];
-			var light  = alchemyConsentData.settings.light_countries || [];
+			var strict = alchemyCookieConsentData.settings.strict_countries || [];
+			var light  = alchemyCookieConsentData.settings.light_countries || [];
 
 			// null (detection failed) or a recognised Strict-list country
 			// both fall through to the normal blocking banner — the only
@@ -252,26 +252,26 @@
 
 	init();
 
-	document.getElementById( 'alchemy-consent-accept' ).addEventListener( 'click', function () {
+	document.getElementById( 'alchemy-cookie-consent-accept' ).addEventListener( 'click', function () {
 		saveConsent( enabledCategories(), 'explicit' );
 	} );
 
-	document.getElementById( 'alchemy-consent-reject' ).addEventListener( 'click', function () {
+	document.getElementById( 'alchemy-cookie-consent-reject' ).addEventListener( 'click', function () {
 		saveConsent( [ 'necessary' ], 'explicit' );
 	} );
 
-	document.getElementById( 'alchemy-consent-customize' ).addEventListener( 'click', function () {
-		banner.querySelector( '.alchemy-consent-categories' ).hidden = false;
-		document.getElementById( 'alchemy-consent-customize' ).hidden = true;
-		document.getElementById( 'alchemy-consent-reject' ).hidden = true;
-		document.getElementById( 'alchemy-consent-accept' ).hidden = true;
-		document.getElementById( 'alchemy-consent-save' ).hidden = false;
+	document.getElementById( 'alchemy-cookie-consent-customize' ).addEventListener( 'click', function () {
+		banner.querySelector( '.alchemy-cookie-consent-categories' ).hidden = false;
+		document.getElementById( 'alchemy-cookie-consent-customize' ).hidden = true;
+		document.getElementById( 'alchemy-cookie-consent-reject' ).hidden = true;
+		document.getElementById( 'alchemy-cookie-consent-accept' ).hidden = true;
+		document.getElementById( 'alchemy-cookie-consent-save' ).hidden = false;
 	} );
 
-	document.getElementById( 'alchemy-consent-save' ).addEventListener( 'click', function () {
+	document.getElementById( 'alchemy-cookie-consent-save' ).addEventListener( 'click', function () {
 		var cats = [ 'necessary' ];
-		var analytics = document.getElementById( 'alchemy-consent-analytics' );
-		var marketing = document.getElementById( 'alchemy-consent-marketing' );
+		var analytics = document.getElementById( 'alchemy-cookie-consent-analytics' );
+		var marketing = document.getElementById( 'alchemy-cookie-consent-marketing' );
 		if ( analytics && analytics.checked ) {
 			cats.push( 'analytics' );
 		}
@@ -283,15 +283,15 @@
 
 	revisitBtn.addEventListener( 'click', openBanner );
 
-	// Lets the [alchemy_consent_settings_link] shortcode (or any custom link)
+	// Lets the [alchemy_cookie_consent_settings_link] shortcode (or any custom link)
 	// reopen the banner without duplicating this logic.
-	document.addEventListener( 'alchemy-consent-reopen', openBanner );
+	document.addEventListener( 'alchemy-cookie-consent-reopen', openBanner );
 
 	if ( highRiskBanner ) {
-		document.getElementById( 'alchemy-consent-highrisk-accept' ).addEventListener( 'click', function () {
+		document.getElementById( 'alchemy-cookie-consent-highrisk-accept' ).addEventListener( 'click', function () {
 			saveHighRiskConsent( true );
 		} );
-		document.getElementById( 'alchemy-consent-highrisk-decline' ).addEventListener( 'click', function () {
+		document.getElementById( 'alchemy-cookie-consent-highrisk-decline' ).addEventListener( 'click', function () {
 			saveHighRiskConsent( false );
 		} );
 	}
@@ -303,7 +303,7 @@
 	// an unrelated Customize choice made earlier) and only strips
 	// marketing, since that's the plugin's closest equivalent to CPRA's
 	// "sale/sharing" concept.
-	document.addEventListener( 'alchemy-consent-optout', function () {
+	document.addEventListener( 'alchemy-cookie-consent-optout', function () {
 		var state = getConsentState();
 		var current = state ? state.categories.slice() : enabledCategories();
 		var idx = current.indexOf( 'marketing' );

@@ -3,7 +3,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class Alchemy_Consent_Public {
+class Alchemy_Cookie_Consent_Public {
 
 	/** @var array|null Memoized per-request; avoids fetching the same option twice on one pageview (wp_enqueue_scripts + wp_footer both need it). */
 	private $settings;
@@ -14,8 +14,8 @@ class Alchemy_Consent_Public {
 	public function __construct() {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'wp_footer', array( $this, 'render_banner' ) );
-		add_action( 'wp_ajax_alchemy_consent_save', array( $this, 'ajax_save_consent' ) );
-		add_action( 'wp_ajax_nopriv_alchemy_consent_save', array( $this, 'ajax_save_consent' ) );
+		add_action( 'wp_ajax_alchemy_cookie_consent_save', array( $this, 'ajax_save_consent' ) );
+		add_action( 'wp_ajax_nopriv_alchemy_cookie_consent_save', array( $this, 'ajax_save_consent' ) );
 
 		// Fires as early as possible in <head>, ahead of GTM's own script
 		// (Site Kit typically prints GTM at default priority 10) — this is
@@ -26,19 +26,19 @@ class Alchemy_Consent_Public {
 
 		// Tell the WP Consent API this plugin handles consent, so Site Kit
 		// (and anything else reading the API) recognises us as a valid CMP.
-		add_filter( 'wp_consent_api_registered_' . ALCHEMY_CONSENT_BASENAME, '__return_true' );
+		add_filter( 'wp_consent_api_registered_' . ALCHEMY_COOKIE_CONSENT_BASENAME, '__return_true' );
 	}
 
 	private function get_settings() {
 		if ( null === $this->settings ) {
-			$this->settings = get_option( 'alchemy_consent_settings' );
+			$this->settings = get_option( 'alchemy_cookie_consent_settings' );
 		}
 		return $this->settings;
 	}
 
 	/**
 	 * Prints a small inline script (not enqueued, so it can run before
-	 * anything else) that reads the alchemy_consent cookie client-side and
+	 * anything else) that reads the alchemy_cookie_consent cookie client-side and
 	 * pushes the current state to window.dataLayer. This has to be pure
 	 * client-side JS rather than PHP reading $_COOKIE — the output here is
 	 * identical for every visitor and is safe under LiteSpeed's full-page
@@ -46,17 +46,17 @@ class Alchemy_Consent_Public {
 	 * state into the cached HTML for everyone.
 	 *
 	 * Any GTM tag (Bing UET, Facebook Pixel, Hotjar, Clarity, etc.) can
-	 * then use a Custom Event trigger on "alchemy_consent_default" /
-	 * "alchemy_consent_update", gated on the matching alchemy_consent_* variable —
+	 * then use a Custom Event trigger on "alchemy_cookie_consent_default" /
+	 * "alchemy_cookie_consent_update", gated on the matching alchemy_cookie_consent_* variable —
 	 * the same mechanism Site Kit uses for Google's own tags, just made
 	 * available to everything else routed through GTM.
 	 *
-	 * alchemy_consent_highrisk is a separate signal from the
+	 * alchemy_cookie_consent_highrisk is a separate signal from the
 	 * necessary/analytics/marketing ones — it tracks the always-ask
 	 * session-recording/chat prompt, which applies regardless of geo tier
 	 * rather than following Strict/Light/Exempt logic. A GTM trigger for
 	 * Hotjar/Clarity/a chat widget should key off this variable, not the
-	 * general alchemy_consent_analytics one, even though those tools may
+	 * general alchemy_cookie_consent_analytics one, even though those tools may
 	 * also be categorised as Analytics for the cookie policy table.
 	 */
 	public function output_datalayer_bridge() {
@@ -70,7 +70,7 @@ class Alchemy_Consent_Public {
 	// identically, including the fail-safe try/catch (a malformed cookie —
 	// DevTools edit, a colliding third-party script, a truncating proxy —
 	// must not throw and silently skip the dataLayer.push below).
-	var m = document.cookie.match(/(^| )alchemy_consent=([^;]+)/);
+	var m = document.cookie.match(/(^| )alchemy_cookie_consent=([^;]+)/);
 	var parsed = null;
 	if ( m ) {
 		try {
@@ -81,14 +81,14 @@ class Alchemy_Consent_Public {
 	// a bare categories array before) — accept both shapes so visitors who
 	// consented under the old version aren't treated as having no consent.
 	var cats = parsed ? ( Array.isArray(parsed) ? parsed : parsed.categories ) : null;
-	var hr = document.cookie.match(/(^| )alchemy_consent_highrisk=([^;]+)/);
+	var hr = document.cookie.match(/(^| )alchemy_cookie_consent_highrisk=([^;]+)/);
 	var highRisk = hr ? decodeURIComponent(hr[2]) === 'granted' : false;
 	window.dataLayer.push({
-		event: 'alchemy_consent_default',
-		alchemy_consent_necessary: true,
-		alchemy_consent_analytics: cats ? cats.indexOf('analytics') !== -1 : false,
-		alchemy_consent_marketing: cats ? cats.indexOf('marketing') !== -1 : false,
-		alchemy_consent_highrisk: highRisk
+		event: 'alchemy_cookie_consent_default',
+		alchemy_cookie_consent_necessary: true,
+		alchemy_cookie_consent_analytics: cats ? cats.indexOf('analytics') !== -1 : false,
+		alchemy_cookie_consent_marketing: cats ? cats.indexOf('marketing') !== -1 : false,
+		alchemy_cookie_consent_highrisk: highRisk
 	});
 })();
 </script>
@@ -106,7 +106,7 @@ class Alchemy_Consent_Public {
 		if ( null !== $this->high_risk_notices ) {
 			return $this->high_risk_notices;
 		}
-		$cookie_list = get_option( 'alchemy_consent_cookie_list', array() );
+		$cookie_list = get_option( 'alchemy_cookie_consent_cookie_list', array() );
 		$notices     = array();
 		foreach ( $cookie_list as $c ) {
 			if ( empty( $c['high_risk'] ) ) {
@@ -122,17 +122,17 @@ class Alchemy_Consent_Public {
 	}
 
 	public function enqueue_assets() {
-		wp_enqueue_style( 'alchemy-consent-banner', ALCHEMY_CONSENT_URL . 'assets/css/banner.css', array(), ALCHEMY_CONSENT_VERSION );
-		wp_enqueue_script( 'alchemy-consent-banner', ALCHEMY_CONSENT_URL . 'assets/js/banner.js', array(), ALCHEMY_CONSENT_VERSION, true );
+		wp_enqueue_style( 'alchemy-cookie-consent-banner', ALCHEMY_COOKIE_CONSENT_URL . 'assets/css/banner.css', array(), ALCHEMY_COOKIE_CONSENT_VERSION );
+		wp_enqueue_script( 'alchemy-cookie-consent-banner', ALCHEMY_COOKIE_CONSENT_URL . 'assets/js/banner.js', array(), ALCHEMY_COOKIE_CONSENT_VERSION, true );
 
 		$settings = $this->get_settings();
 
 		wp_localize_script(
-			'alchemy-consent-banner',
-			'alchemyConsentData',
+			'alchemy-cookie-consent-banner',
+			'alchemyCookieConsentData',
 			array(
 				'ajaxUrl'  => admin_url( 'admin-ajax.php' ),
-				'nonce'    => wp_create_nonce( 'alchemy_consent_nonce' ),
+				'nonce'    => wp_create_nonce( 'alchemy_cookie_consent_nonce' ),
 				'settings' => array(
 					'categories_enabled'     => isset( $settings['categories_enabled'] ) ? $settings['categories_enabled'] : array(
 						'analytics' => false,
@@ -154,11 +154,11 @@ class Alchemy_Consent_Public {
 
 	public function render_banner() {
 		$settings = $this->get_settings();
-		include ALCHEMY_CONSENT_PATH . 'templates/banner.php';
+		include ALCHEMY_COOKIE_CONSENT_PATH . 'templates/banner.php';
 	}
 
 	public function ajax_save_consent() {
-		check_ajax_referer( 'alchemy_consent_nonce', 'nonce' );
+		check_ajax_referer( 'alchemy_cookie_consent_nonce', 'nonce' );
 
 		// "general" = the Necessary/Analytics/Marketing decision (drives WP
 		// Consent API). "highrisk" = the separate always-ask session-
@@ -224,7 +224,7 @@ class Alchemy_Consent_Public {
 
 	private function log_consent( $categories ) {
 		global $wpdb;
-		$table = $wpdb->prefix . 'alchemy_consent_log';
+		$table = $wpdb->prefix . 'alchemy_cookie_consent_log';
 
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- nonce is
 		// already verified by check_ajax_referer() in ajax_save_consent(), the

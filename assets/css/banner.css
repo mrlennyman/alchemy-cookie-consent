@@ -1,4 +1,4 @@
-.alchemy-consent-banner {
+.alchemy-cookie-consent-banner {
 	position: fixed;
 	left: 0;
 	right: 0;
@@ -11,11 +11,11 @@
 	padding: 16px;
 }
 
-.alchemy-consent-hidden {
+.alchemy-cookie-consent-hidden {
 	display: none;
 }
 
-.alchemy-consent-inner {
+.alchemy-cookie-consent-inner {
 	max-width: 900px;
 	margin: 0 auto;
 	display: flex;
@@ -24,7 +24,7 @@
 	gap: 12px;
 }
 
-.alchemy-consent-message {
+.alchemy-cookie-consent-message {
 	flex: 1 1 320px;
 	margin: 0;
 	font-size: 14px;
@@ -32,14 +32,14 @@
 	color: #333;
 }
 
-.alchemy-consent-policy-link {
-	color: var(--alchemy-consent-accent, #1a73e8);
+.alchemy-cookie-consent-policy-link {
+	color: var(--alchemy-cookie-consent-accent, #1a73e8);
 	text-decoration: underline;
 	white-space: nowrap;
 	margin-left: 4px;
 }
 
-.alchemy-consent-categories {
+.alchemy-cookie-consent-categories {
 	display: flex;
 	gap: 16px;
 	flex: 1 1 100%;
@@ -47,13 +47,13 @@
 	color: #333;
 }
 
-.alchemy-consent-actions {
+.alchemy-cookie-consent-actions {
 	display: flex;
 	gap: 8px;
 	flex-wrap: wrap;
 }
 
-.alchemy-consent-btn {
+.alchemy-cookie-consent-btn {
 	border-radius: 4px;
 	padding: 8px 16px;
 	font-size: 14px;
@@ -64,24 +64,24 @@
 	letter-spacing: 0.02em;
 }
 
-.alchemy-consent-btn-solid {
-	background: var(--alchemy-consent-accent, #1a73e8);
+.alchemy-cookie-consent-btn-solid {
+	background: var(--alchemy-cookie-consent-accent, #1a73e8);
 	color: #fff;
 }
 
-.alchemy-consent-btn-outline {
+.alchemy-cookie-consent-btn-outline {
 	background: transparent;
 	border-color: #ccc;
 	color: #333;
 }
 
-.alchemy-consent-btn-text {
+.alchemy-cookie-consent-btn-text {
 	background: transparent;
 	color: #555;
 	text-decoration: underline;
 }
 
-.alchemy-consent-revisit {
+.alchemy-cookie-consent-revisit {
 	position: fixed;
 	left: 16px;
 	bottom: 16px;
@@ -89,7 +89,7 @@
 	width: 40px;
 	height: 40px;
 	border-radius: 50%;
-	background: var(--alchemy-consent-revisit-bg, rgba(255, 255, 255, 0.55));
+	background: var(--alchemy-cookie-consent-revisit-bg, rgba(255, 255, 255, 0.55));
 	border: 1px solid rgba(0, 0, 0, 0.08);
 	cursor: pointer;
 	font-size: 18px;
@@ -98,36 +98,36 @@
 	transition: background-color 0.15s ease;
 }
 
-.alchemy-consent-revisit:hover,
-.alchemy-consent-revisit:focus-visible {
-	background: var(--alchemy-consent-revisit-bg-hover, rgba(255, 255, 255, 1));
+.alchemy-cookie-consent-revisit:hover,
+.alchemy-cookie-consent-revisit:focus-visible {
+	background: var(--alchemy-cookie-consent-revisit-bg-hover, rgba(255, 255, 255, 1));
 }
 
-.alchemy-consent-policy-table {
+.alchemy-cookie-consent-policy-table {
 	width: 100%;
 	border-collapse: collapse;
 	margin-bottom: 24px;
 }
 
-.alchemy-consent-policy-table th,
-.alchemy-consent-policy-table td {
+.alchemy-cookie-consent-policy-table th,
+.alchemy-cookie-consent-policy-table td {
 	border: 1px solid #e2e2e2;
 	padding: 8px;
 	text-align: left;
 	font-size: 14px;
 }
 
-.alchemy-consent-reopen-link {
+.alchemy-cookie-consent-reopen-link {
 	background: none;
 	border: none;
 	padding: 0;
-	color: var(--alchemy-consent-accent, #1a73e8);
+	color: var(--alchemy-cookie-consent-accent, #1a73e8);
 	text-decoration: underline;
 	cursor: pointer;
 	font-size: inherit;
 }
 
-.alchemy-consent-privacy-choices {
+.alchemy-cookie-consent-privacy-choices {
 	background: none;
 	border: none;
 	padding: 0;
