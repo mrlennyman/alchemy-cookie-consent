@@ -1,10 +1,10 @@
-=== Alchemy Consent ===
+=== Alchemy Cookie Consent ===
 Contributors: websitealchemy
 Tags: cookie consent, gdpr, ccpa, cookie banner, consent mode
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.7.0
+Stable tag: 1.7.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,7 +12,7 @@ A lightweight, self-hosted cookie consent banner with Google Consent Mode v2 and
 
 == Description ==
 
-Alchemy Consent shows an opt-in cookie banner, blocks non-essential tracking
+Alchemy Cookie Consent shows an opt-in consent banner, blocks non-essential tracking
 until a visitor accepts, logs each consent choice, and registers with the
 WP Consent API so Site Kit's Consent Mode picks it up automatically.
 
@@ -29,15 +29,15 @@ Global Privacy Control as a valid CCPA/CPRA opt-out signal (see
 == Installation ==
 
 1. Upload and activate the plugin.
-2. Alchemy Consent > Categories — turn on Marketing only if this site runs
+2. Cookie Consent > Categories — turn on Marketing only if this site runs
    Google Ads or remarketing.
-3. Alchemy Consent > Cookie List — review/edit the seeded list for anything
+3. Cookie Consent > Cookie List — review/edit the seeded list for anything
    this specific site runs beyond the defaults.
 4. Add the `[alchemy_cookie_policy]` shortcode to your Cookie/Privacy Policy
    page — it renders the current cookie list automatically.
 5. In Site Kit > Settings > Admin Settings, turn on Consent Mode. It
-   should detect Alchemy Consent via the WP Consent API without further
-   configuration.
+   should detect Alchemy Cookie Consent via the WP Consent API without
+   further configuration.
 6. Test with GA4 DebugView or Tag Assistant before/after clicking
    Accept / Reject.
 
@@ -102,8 +102,8 @@ external requests of any kind.
 == Wiring a non-Google tag (e.g. Bing UET) through GTM ==
 
 Site Kit's Consent Mode only signals Google's own tags. For anything
-else routed through GTM, Alchemy Consent pushes the visitor's choice to
-window.dataLayer as:
+else routed through GTM, Alchemy Cookie Consent pushes the visitor's
+choice to window.dataLayer as:
 
   { event: 'alchemy_consent_default' | 'alchemy_consent_update',
     alchemy_consent_necessary: true,
@@ -214,6 +214,16 @@ property read and the same first-party AJAX endpoint every other choice
 already goes through.
 
 == Changelog ==
+
+= 1.7.1 =
+* Changed: display name updated to "Alchemy Cookie Consent" (the
+  WordPress admin menu shows the shorter "Cookie Consent" — full name
+  on the settings page itself and everywhere else). This is a
+  display-only rename: the plugin slug/folder (alchemy-consent), text
+  domain, PHP class names, constants, option names, the database table,
+  cookie names, shortcode names, the GitHub repo, and the update
+  checker's slug are all unchanged, specifically to avoid repeating the
+  disruption the WA Consent -> Alchemy Consent rename caused in 1.6.0.
 
 = 1.7.0 =
 * Added: High-Risk Consent — a separate always-ask prompt for session-

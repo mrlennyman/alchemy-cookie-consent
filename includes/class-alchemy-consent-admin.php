@@ -15,7 +15,7 @@ class Alchemy_Consent_Admin {
 	}
 
 	public function add_menu() {
-		add_menu_page( 'Alchemy Consent', 'Alchemy Consent', 'manage_options', 'alchemy-consent', array( $this, 'render_page' ), 'dashicons-shield', 58 );
+		add_menu_page( 'Alchemy Cookie Consent', 'Cookie Consent', 'manage_options', 'alchemy-consent', array( $this, 'render_page' ), 'dashicons-shield', 58 );
 	}
 
 	/**
@@ -66,7 +66,7 @@ class Alchemy_Consent_Admin {
 		// Read-only tab selector for display only, doesn't change state, no nonce needed.
 		$tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'general'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
-		echo '<div class="wrap"><h1>Alchemy Consent</h1>';
+		echo '<div class="wrap"><h1>Alchemy Cookie Consent</h1>';
 		echo '<h2 class="nav-tab-wrapper">';
 
 		$tabs = array(

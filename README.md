@@ -1,4 +1,4 @@
-# Alchemy Consent
+# Alchemy Cookie Consent
 
 Self-hosted WordPress cookie consent banner — WP Consent API + Google Consent Mode v2, optional geo-targeting, no external cookie scanner. Built for the Website Alchemy client portfolio.
 
