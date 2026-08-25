@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, ccpa, cookie banner, consent mode
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.7.2
+Stable tag: 1.7.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -214,6 +214,12 @@ property read and the same first-party AJAX endpoint every other choice
 already goes through.
 
 == Changelog ==
+
+= 1.7.3 =
+* Changed: GitHub repo renamed to match the plugin — now
+  github.com/mrlennyman/alchemy-cookie-consent. Updated the
+  buildUpdateChecker() URL to point at it directly rather than relying
+  on GitHub's rename redirect long-term.
 
 = 1.7.2 =
 Full internal rename to match the 1.7.1 display name, now that this
