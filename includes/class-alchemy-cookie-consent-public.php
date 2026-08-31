@@ -127,6 +127,15 @@ class Alchemy_Cookie_Consent_Public {
 
 		$settings = $this->get_settings();
 
+		// Has to happen here (before wp_head prints enqueued styles), not in
+		// the wp_footer-rendered template — enqueuing a stylesheet that late
+		// wouldn't retroactively add it to <head>.
+		$font_presets = Alchemy_Cookie_Consent_Activator::font_presets();
+		$font_preset  = isset( $settings['font_preset'] ) && isset( $font_presets[ $settings['font_preset'] ] ) ? $settings['font_preset'] : 'default';
+		if ( ! empty( $font_presets[ $font_preset ]['google'] ) ) {
+			wp_enqueue_style( 'alchemy-cookie-consent-google-font', $font_presets[ $font_preset ]['google'], array(), ALCHEMY_COOKIE_CONSENT_VERSION );
+		}
+
 		wp_localize_script(
 			'alchemy-cookie-consent-banner',
 			'alchemyCookieConsentData',

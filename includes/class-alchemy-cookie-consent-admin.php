@@ -5,9 +5,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Alchemy_Cookie_Consent_Admin {
 
+	/** @var string Hook suffix returned by add_menu_page(), used to only load color-picker assets on this plugin's own page. */
+	private $page_hook;
+
 	public function __construct() {
 		add_action( 'admin_menu', array( $this, 'add_menu' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
 		add_action( 'admin_post_alchemy_cookie_consent_save_general', array( $this, 'save_general' ) );
+		add_action( 'admin_post_alchemy_cookie_consent_save_style', array( $this, 'save_style' ) );
 		add_action( 'admin_post_alchemy_cookie_consent_save_categories', array( $this, 'save_categories' ) );
 		add_action( 'admin_post_alchemy_cookie_consent_save_cookies', array( $this, 'save_cookies' ) );
 		add_action( 'admin_post_alchemy_cookie_consent_export_log', array( $this, 'export_log' ) );
@@ -15,7 +20,20 @@ class Alchemy_Cookie_Consent_Admin {
 	}
 
 	public function add_menu() {
-		add_menu_page( 'Alchemy Cookie Consent', 'Cookie Consent', 'manage_options', 'alchemy-cookie-consent', array( $this, 'render_page' ), 'dashicons-shield', 58 );
+		$this->page_hook = add_menu_page( 'Alchemy Cookie Consent', 'Cookie Consent', 'manage_options', 'alchemy-cookie-consent', array( $this, 'render_page' ), 'dashicons-shield', 58 );
+	}
+
+	/**
+	 * WP's own color picker (used by the Style tab) rather than plain hex
+	 * text fields — only loaded on this plugin's own settings page, not
+	 * every admin screen.
+	 */
+	public function enqueue_admin_assets( $hook ) {
+		if ( $hook !== $this->page_hook ) {
+			return;
+		}
+		wp_enqueue_style( 'wp-color-picker' );
+		wp_enqueue_script( 'wp-color-picker' );
 	}
 
 	/**
@@ -49,6 +67,18 @@ class Alchemy_Cookie_Consent_Admin {
 	}
 
 	/**
+	 * Clamped integer, falling back to the given default when missing or
+	 * non-numeric (e.g. a field left blank, or a value saved under a
+	 * scheme that no longer applies).
+	 */
+	private function sanitize_px( $posted, $default, $min = 0, $max = 999 ) {
+		if ( ! isset( $posted ) || '' === $posted || ! is_numeric( $posted ) ) {
+			return $default;
+		}
+		return max( $min, min( $max, (int) $posted ) );
+	}
+
+	/**
 	 * Neutralizes leading formula-trigger characters before a value is
 	 * written into an exported CSV cell — Excel/Sheets treat a cell
 	 * starting with =, +, -, or @ as a formula, and page_url in particular
@@ -71,6 +101,7 @@ class Alchemy_Cookie_Consent_Admin {
 
 		$tabs = array(
 			'general'    => 'General',
+			'style'      => 'Style',
 			'categories' => 'Categories',
 			'cookies'    => 'Cookie List',
 			'log'        => 'Consent Log',
@@ -89,6 +120,9 @@ class Alchemy_Cookie_Consent_Admin {
 		echo '</h2>';
 
 		switch ( $tab ) {
+			case 'style':
+				$this->render_style_tab();
+				break;
 			case 'categories':
 				$this->render_categories_tab();
 				break;
@@ -132,10 +166,6 @@ class Alchemy_Cookie_Consent_Admin {
 					<td><input type="text" name="customize_label" id="customize_label" value="<?php echo esc_attr( $settings['customize_label'] ); ?>" class="regular-text"></td>
 				</tr>
 				<tr>
-					<th><label for="accent_color">Accent color</label></th>
-					<td><input type="text" name="accent_color" id="accent_color" value="<?php echo esc_attr( $settings['accent_color'] ); ?>" class="regular-text" placeholder="#1a73e8"></td>
-				</tr>
-				<tr>
 					<th><label for="policy_page_id">Cookie/Privacy Policy page</label></th>
 					<td>
 						<?php
@@ -152,27 +182,159 @@ class Alchemy_Cookie_Consent_Admin {
 						<p class="description">Picked by page, not URL — so the link resolves correctly per site rather than needing a hardcoded address per client. Shown as a link inside the banner; leave unset to hide it.</p>
 					</td>
 				</tr>
+			</table>
+			<p class="description">Colors, fonts, and other appearance settings have moved to the <strong>Style</strong> tab.</p>
+			<?php submit_button( 'Save Settings' ); ?>
+		</form>
+		<?php
+	}
+
+	/**
+	 * Every field here writes into the same flat $settings array as the
+	 * General tab (no separate nested 'style' option) — grouped onto its
+	 * own tab purely for a cleaner admin UI, not a different storage
+	 * scheme. Defaults come from Alchemy_Cookie_Consent_Activator::style_defaults()
+	 * so this form, the save handler below, and the banner template's CSS
+	 * variables can't drift out of sync.
+	 */
+	private function render_style_tab() {
+		$settings = get_option( 'alchemy_cookie_consent_settings' );
+		$d        = Alchemy_Cookie_Consent_Activator::style_defaults();
+		$s        = array_merge( $d, array_intersect_key( $settings, $d ) );
+		?>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<input type="hidden" name="action" value="alchemy_cookie_consent_save_style">
+			<?php wp_nonce_field( 'alchemy_cookie_consent_save_style' ); ?>
+
+			<h2 class="title">Typography</h2>
+			<table class="form-table">
 				<tr>
-					<th><label for="revisit_bg_color">Revisit button color</label></th>
-					<td><input type="text" name="revisit_bg_color" id="revisit_bg_color" value="<?php echo esc_attr( isset( $settings['revisit_bg_color'] ) ? $settings['revisit_bg_color'] : '#ffffff' ); ?>" class="regular-text" placeholder="#ffffff"></td>
-				</tr>
-				<tr>
-					<th><label for="revisit_opacity">Revisit button opacity</label></th>
+					<th><label for="font_preset">Font</label></th>
 					<td>
-						<input type="number" name="revisit_opacity" id="revisit_opacity" value="<?php echo esc_attr( isset( $settings['revisit_opacity'] ) ? $settings['revisit_opacity'] : 55 ); ?>" min="0" max="100" step="5" style="width: 80px;"> %
-						<p class="description">At rest (not hovered). Lower = more see-through. Default 55.</p>
+						<select name="font_preset" id="font_preset">
+							<?php foreach ( Alchemy_Cookie_Consent_Activator::font_presets() as $key => $font ) : ?>
+								<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $s['font_preset'], $key ); ?>><?php echo esc_html( $font['label'] ); ?></option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description">Applies to the banner and the standalone High-Risk prompt. Non-default choices load a Google Font.</p>
 					</td>
 				</tr>
 				<tr>
-					<th><label for="revisit_hover_opacity">Revisit button hover opacity</label></th>
+					<th><label for="font_size">Text size (px)</label></th>
+					<td><input type="number" name="font_size" id="font_size" value="<?php echo esc_attr( $s['font_size'] ); ?>" min="10" max="24" step="1" class="small-text"></td>
+				</tr>
+				<tr>
+					<th><label for="text_color">Text color</label></th>
+					<td><input type="text" name="text_color" id="text_color" value="<?php echo esc_attr( $s['text_color'] ); ?>" class="alchemy-cookie-consent-color-field"></td>
+				</tr>
+			</table>
+
+			<h2 class="title">Buttons</h2>
+			<table class="form-table">
+				<tr>
+					<th><label for="accent_color">Accent / button color</label></th>
 					<td>
-						<input type="number" name="revisit_hover_opacity" id="revisit_hover_opacity" value="<?php echo esc_attr( isset( $settings['revisit_hover_opacity'] ) ? $settings['revisit_hover_opacity'] : 100 ); ?>" min="0" max="100" step="5" style="width: 80px;"> %
-						<p class="description">On hover/focus. Default 100 (fully solid) so it's still a clear, findable target once someone's looking for it.</p>
+						<input type="text" name="accent_color" id="accent_color" value="<?php echo esc_attr( $s['accent_color'] ); ?>" class="alchemy-cookie-consent-color-field">
+						<p class="description">The solid Accept button, links, and the standalone prompt's "I Agree" button.</p>
+					</td>
+				</tr>
+				<tr>
+					<th><label for="button_hover_color">Button hover color</label></th>
+					<td><input type="text" name="button_hover_color" id="button_hover_color" value="<?php echo esc_attr( $s['button_hover_color'] ); ?>" class="alchemy-cookie-consent-color-field"></td>
+				</tr>
+				<tr>
+					<th><label for="button_text_color">Button text color</label></th>
+					<td><input type="text" name="button_text_color" id="button_text_color" value="<?php echo esc_attr( $s['button_text_color'] ); ?>" class="alchemy-cookie-consent-color-field"></td>
+				</tr>
+				<tr>
+					<th><label for="button_outline_color">Outline button border/text</label></th>
+					<td>
+						<input type="text" name="button_outline_color" id="button_outline_color" value="<?php echo esc_attr( $s['button_outline_color'] ); ?>" class="alchemy-cookie-consent-color-field">
+						<p class="description">The Reject button, and the standalone prompt's "No Thanks" button.</p>
+					</td>
+				</tr>
+				<tr>
+					<th><label for="button_outline_hover_bg">Outline button hover background</label></th>
+					<td><input type="text" name="button_outline_hover_bg" id="button_outline_hover_bg" value="<?php echo esc_attr( $s['button_outline_hover_bg'] ); ?>" class="alchemy-cookie-consent-color-field"></td>
+				</tr>
+				<tr>
+					<th><label for="button_radius">Corner radius (px)</label></th>
+					<td><input type="number" name="button_radius" id="button_radius" value="<?php echo esc_attr( $s['button_radius'] ); ?>" min="0" max="40" step="1" class="small-text"></td>
+				</tr>
+				<tr>
+					<th><label for="button_font_size">Font size (px)</label></th>
+					<td><input type="number" name="button_font_size" id="button_font_size" value="<?php echo esc_attr( $s['button_font_size'] ); ?>" min="10" max="24" step="1" class="small-text"></td>
+				</tr>
+				<tr>
+					<th><label for="button_padding">Padding (px)</label></th>
+					<td>
+						<input type="number" name="button_padding" id="button_padding" value="<?php echo esc_attr( $s['button_padding'] ); ?>" min="4" max="40" step="1" class="small-text">
+						<p class="description">Vertical padding — horizontal is always double this.</p>
 					</td>
 				</tr>
 			</table>
-			<?php submit_button( 'Save Settings' ); ?>
+
+			<h2 class="title">Container</h2>
+			<table class="form-table">
+				<tr>
+					<th><label for="container_bg_color">Background color</label></th>
+					<td><input type="text" name="container_bg_color" id="container_bg_color" value="<?php echo esc_attr( $s['container_bg_color'] ); ?>" class="alchemy-cookie-consent-color-field"></td>
+				</tr>
+				<tr>
+					<th><label for="container_border_color">Top border color</label></th>
+					<td><input type="text" name="container_border_color" id="container_border_color" value="<?php echo esc_attr( $s['container_border_color'] ); ?>" class="alchemy-cookie-consent-color-field"></td>
+				</tr>
+				<tr>
+					<th><label for="container_padding">Padding (px)</label></th>
+					<td><input type="number" name="container_padding" id="container_padding" value="<?php echo esc_attr( $s['container_padding'] ); ?>" min="0" max="80" step="1" class="small-text"></td>
+				</tr>
+				<tr>
+					<th>Shadow</th>
+					<td><label><input type="checkbox" name="shadow_enabled" <?php checked( ! empty( $s['shadow_enabled'] ) ); ?>> Enabled</label></td>
+				</tr>
+				<tr>
+					<th><label for="shadow_color">Shadow color</label></th>
+					<td><input type="text" name="shadow_color" id="shadow_color" value="<?php echo esc_attr( $s['shadow_color'] ); ?>" class="alchemy-cookie-consent-color-field"></td>
+				</tr>
+				<tr>
+					<th><label for="shadow_opacity">Shadow opacity (%)</label></th>
+					<td><input type="number" name="shadow_opacity" id="shadow_opacity" value="<?php echo esc_attr( $s['shadow_opacity'] ); ?>" min="0" max="100" step="1" class="small-text"></td>
+				</tr>
+				<tr>
+					<th><label for="shadow_blur">Shadow blur (px)</label></th>
+					<td><input type="number" name="shadow_blur" id="shadow_blur" value="<?php echo esc_attr( $s['shadow_blur'] ); ?>" min="0" max="100" step="1" class="small-text"></td>
+				</tr>
+			</table>
+
+			<h2 class="title">Revisit button</h2>
+			<p class="description">The floating pill button that lets a returning visitor reopen the banner after they've already made a choice.</p>
+			<table class="form-table">
+				<tr>
+					<th><label for="revisit_bg_color">Color</label></th>
+					<td><input type="text" name="revisit_bg_color" id="revisit_bg_color" value="<?php echo esc_attr( $s['revisit_bg_color'] ); ?>" class="alchemy-cookie-consent-color-field"></td>
+				</tr>
+				<tr>
+					<th><label for="revisit_opacity">Opacity at rest (%)</label></th>
+					<td>
+						<input type="number" name="revisit_opacity" id="revisit_opacity" value="<?php echo esc_attr( $s['revisit_opacity'] ); ?>" min="0" max="100" step="5" class="small-text">
+						<p class="description">Lower = more see-through.</p>
+					</td>
+				</tr>
+				<tr>
+					<th><label for="revisit_hover_opacity">Opacity on hover (%)</label></th>
+					<td>
+						<input type="number" name="revisit_hover_opacity" id="revisit_hover_opacity" value="<?php echo esc_attr( $s['revisit_hover_opacity'] ); ?>" min="0" max="100" step="5" class="small-text">
+						<p class="description">Default 100 (fully solid) so it's still a clear, findable target once someone's looking for it.</p>
+					</td>
+				</tr>
+			</table>
+			<?php submit_button( 'Save Style' ); ?>
 		</form>
+		<script>
+		jQuery( function ( $ ) {
+			$( '.alchemy-cookie-consent-color-field' ).wpColorPicker();
+		} );
+		</script>
 		<?php
 	}
 
@@ -460,14 +622,47 @@ class Alchemy_Cookie_Consent_Admin {
 		$settings['accept_label']    = isset( $_POST['accept_label'] ) ? sanitize_text_field( wp_unslash( $_POST['accept_label'] ) ) : 'Accept All';
 		$settings['reject_label']    = isset( $_POST['reject_label'] ) ? sanitize_text_field( wp_unslash( $_POST['reject_label'] ) ) : 'Reject All';
 		$settings['customize_label'] = isset( $_POST['customize_label'] ) ? sanitize_text_field( wp_unslash( $_POST['customize_label'] ) ) : 'Customize';
-		$settings['accent_color']    = isset( $_POST['accent_color'] ) ? $this->sanitize_hex_color_or_default( $_POST['accent_color'], '#1a73e8' ) : '#1a73e8';
 		$settings['policy_page_id']  = isset( $_POST['policy_page_id'] ) ? absint( $_POST['policy_page_id'] ) : 0;
-		$settings['revisit_bg_color']      = isset( $_POST['revisit_bg_color'] ) ? $this->sanitize_hex_color_or_default( $_POST['revisit_bg_color'], '#ffffff' ) : '#ffffff';
-		$settings['revisit_opacity']       = isset( $_POST['revisit_opacity'] ) ? max( 0, min( 100, absint( $_POST['revisit_opacity'] ) ) ) : 55;
-		$settings['revisit_hover_opacity'] = isset( $_POST['revisit_hover_opacity'] ) ? max( 0, min( 100, absint( $_POST['revisit_hover_opacity'] ) ) ) : 100;
 
 		update_option( 'alchemy_cookie_consent_settings', $settings );
 		$this->redirect_to_tab( 'general' );
+	}
+
+	public function save_style() {
+		$this->verify_admin_request( 'alchemy_cookie_consent_save_style' );
+
+		$settings = get_option( 'alchemy_cookie_consent_settings' );
+		$d        = Alchemy_Cookie_Consent_Activator::style_defaults();
+
+		$font_presets            = Alchemy_Cookie_Consent_Activator::font_presets();
+		$posted_font_preset      = isset( $_POST['font_preset'] ) ? sanitize_key( wp_unslash( $_POST['font_preset'] ) ) : '';
+		$settings['font_preset'] = isset( $font_presets[ $posted_font_preset ] ) ? $posted_font_preset : $d['font_preset'];
+		$settings['font_size']   = $this->sanitize_px( $_POST['font_size'] ?? null, $d['font_size'], 10, 24 );
+		$settings['text_color']  = isset( $_POST['text_color'] ) ? $this->sanitize_hex_color_or_default( $_POST['text_color'], $d['text_color'] ) : $d['text_color'];
+
+		$settings['accent_color']            = isset( $_POST['accent_color'] ) ? $this->sanitize_hex_color_or_default( $_POST['accent_color'], $d['accent_color'] ) : $d['accent_color'];
+		$settings['button_hover_color']      = isset( $_POST['button_hover_color'] ) ? $this->sanitize_hex_color_or_default( $_POST['button_hover_color'], $d['button_hover_color'] ) : $d['button_hover_color'];
+		$settings['button_text_color']       = isset( $_POST['button_text_color'] ) ? $this->sanitize_hex_color_or_default( $_POST['button_text_color'], $d['button_text_color'] ) : $d['button_text_color'];
+		$settings['button_outline_color']    = isset( $_POST['button_outline_color'] ) ? $this->sanitize_hex_color_or_default( $_POST['button_outline_color'], $d['button_outline_color'] ) : $d['button_outline_color'];
+		$settings['button_outline_hover_bg'] = isset( $_POST['button_outline_hover_bg'] ) ? $this->sanitize_hex_color_or_default( $_POST['button_outline_hover_bg'], $d['button_outline_hover_bg'] ) : $d['button_outline_hover_bg'];
+		$settings['button_radius']           = $this->sanitize_px( $_POST['button_radius'] ?? null, $d['button_radius'], 0, 40 );
+		$settings['button_font_size']        = $this->sanitize_px( $_POST['button_font_size'] ?? null, $d['button_font_size'], 10, 24 );
+		$settings['button_padding']          = $this->sanitize_px( $_POST['button_padding'] ?? null, $d['button_padding'], 4, 40 );
+
+		$settings['container_bg_color']     = isset( $_POST['container_bg_color'] ) ? $this->sanitize_hex_color_or_default( $_POST['container_bg_color'], $d['container_bg_color'] ) : $d['container_bg_color'];
+		$settings['container_border_color'] = isset( $_POST['container_border_color'] ) ? $this->sanitize_hex_color_or_default( $_POST['container_border_color'], $d['container_border_color'] ) : $d['container_border_color'];
+		$settings['container_padding']      = $this->sanitize_px( $_POST['container_padding'] ?? null, $d['container_padding'], 0, 80 );
+		$settings['shadow_enabled']         = ! empty( $_POST['shadow_enabled'] );
+		$settings['shadow_color']           = isset( $_POST['shadow_color'] ) ? $this->sanitize_hex_color_or_default( $_POST['shadow_color'], $d['shadow_color'] ) : $d['shadow_color'];
+		$settings['shadow_opacity']         = $this->sanitize_px( $_POST['shadow_opacity'] ?? null, $d['shadow_opacity'], 0, 100 );
+		$settings['shadow_blur']            = $this->sanitize_px( $_POST['shadow_blur'] ?? null, $d['shadow_blur'], 0, 100 );
+
+		$settings['revisit_bg_color']      = isset( $_POST['revisit_bg_color'] ) ? $this->sanitize_hex_color_or_default( $_POST['revisit_bg_color'], $d['revisit_bg_color'] ) : $d['revisit_bg_color'];
+		$settings['revisit_opacity']       = $this->sanitize_px( $_POST['revisit_opacity'] ?? null, $d['revisit_opacity'], 0, 100 );
+		$settings['revisit_hover_opacity'] = $this->sanitize_px( $_POST['revisit_hover_opacity'] ?? null, $d['revisit_hover_opacity'], 0, 100 );
+
+		update_option( 'alchemy_cookie_consent_settings', $settings );
+		$this->redirect_to_tab( 'style' );
 	}
 
 	public function save_categories() {

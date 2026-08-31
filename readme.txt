@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, ccpa, cookie banner, consent mode
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.7.3
+Stable tag: 1.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -31,14 +31,17 @@ Global Privacy Control as a valid CCPA/CPRA opt-out signal (see
 1. Upload and activate the plugin.
 2. Cookie Consent > Categories — turn on Marketing only if this site runs
    Google Ads or remarketing.
-3. Cookie Consent > Cookie List — review/edit the seeded list for anything
+3. Cookie Consent > Style — match the banner's colors, font, and buttons
+   to the site's own design. Optional; the defaults are a reasonable
+   generic look on their own.
+4. Cookie Consent > Cookie List — review/edit the seeded list for anything
    this specific site runs beyond the defaults.
-4. Add the `[alchemy_cookie_policy]` shortcode to your Cookie/Privacy Policy
+5. Add the `[alchemy_cookie_policy]` shortcode to your Cookie/Privacy Policy
    page — it renders the current cookie list automatically.
-5. In Site Kit > Settings > Admin Settings, turn on Consent Mode. It
+6. In Site Kit > Settings > Admin Settings, turn on Consent Mode. It
    should detect Alchemy Cookie Consent via the WP Consent API without
    further configuration.
-6. Test with GA4 DebugView or Tag Assistant before/after clicking
+7. Test with GA4 DebugView or Tag Assistant before/after clicking
    Accept / Reject.
 
 == Frequently Asked Questions ==
@@ -213,7 +216,46 @@ Neither feature makes an external request — both are purely a browser
 property read and the same first-party AJAX endpoint every other choice
 already goes through.
 
+== Style Tab ==
+
+Every visual aspect of the banner in one place — Cookie Consent > Style
+— rather than scattered across other tabs or requiring theme CSS
+overrides. Applies to the main banner, the standalone High-Risk prompt,
+and the revisit button alike (they share the same underlying CSS
+variables). Grouped into four sections:
+
+* **Typography** — a font choice (system default, or Inter/Poppins via
+  Google Fonts, or Georgia for a classic look), text size, and text
+  color.
+* **Buttons** — the accent color (Accept button, links), a genuine
+  hover state for every button (previously none existed), button text
+  color, the outline button's border/text color and hover fill, corner
+  radius, font size, and padding.
+* **Container** — background color, top border color, padding, and a
+  configurable drop shadow (color, opacity, blur, or switched off
+  entirely).
+* **Revisit button** — color and opacity at rest/on hover (this section
+  simply moved here from the General tab; nothing about it changed).
+
+Colors use WordPress's own color picker rather than plain hex fields.
+Every field has a sensible default matching what the banner already
+looked like before this tab existed, so nothing changes in appearance
+until a client's site is actually customised here.
+
 == Changelog ==
+
+= 1.8.0 =
+* Added: Style tab (Cookie Consent > Style) — font (with three optional
+  Google Font presets), text size/color, button hover states (none
+  existed before), button text/outline colors and hover fill, corner
+  radius, padding, container background/border/padding, and a
+  configurable drop shadow. Uses WordPress's native color picker
+  instead of plain hex fields. See readme "Style Tab" section.
+* Changed: Accent color and the three Revisit button settings moved
+  from the General tab to the new Style tab — same settings, same
+  storage, just relocated for a cleaner General tab.
+* Fixed (incidentally): the Accept/Reject/Customize buttons never had
+  a hover state at all in any prior version; they do now.
 
 = 1.7.3 =
 * Changed: GitHub repo renamed to match the plugin — now

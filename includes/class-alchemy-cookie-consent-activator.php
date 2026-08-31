@@ -36,16 +36,83 @@ class Alchemy_Cookie_Consent_Activator {
 	 */
 	private static function merge_new_setting_defaults() {
 		$settings = get_option( 'alchemy_cookie_consent_settings', array() );
-		$defaults = array(
-			'geo_targeting_enabled' => false, // off by default — never silently changes existing behaviour on upgrade.
-			'strict_countries'      => self::default_strict_countries(),
-			'light_countries'       => self::default_light_countries(),
-			'policy_page_id'        => 0,
-			'revisit_bg_color'      => '#ffffff',
-			'revisit_opacity'       => 55,
-			'revisit_hover_opacity' => 100,
+		$defaults = array_merge(
+			array(
+				'geo_targeting_enabled' => false, // off by default — never silently changes existing behaviour on upgrade.
+				'strict_countries'      => self::default_strict_countries(),
+				'light_countries'       => self::default_light_countries(),
+				'policy_page_id'        => 0,
+			),
+			self::style_defaults()
 		);
 		update_option( 'alchemy_cookie_consent_settings', array_merge( $defaults, $settings ) );
+	}
+
+	/**
+	 * Every visual/style setting, in one place — shared between seeding
+	 * (below), the Style tab's form (class-alchemy-cookie-consent-admin.php),
+	 * and the banner template's CSS-variable resolver
+	 * (templates/banner.php), so the three can't drift out of sync.
+	 * Values match what banner.css already hardcodes, so a fresh install's
+	 * appearance is unchanged until a client actually customises the Style
+	 * tab.
+	 */
+	public static function style_defaults() {
+		return array(
+			'accent_color'            => '#1a73e8',
+			'font_preset'             => 'default',
+			'font_size'               => 14,
+			'text_color'              => '#333333',
+			'button_hover_color'      => '#155cba',
+			'button_text_color'       => '#ffffff',
+			'button_outline_color'    => '#cccccc',
+			'button_outline_hover_bg' => '#f5f5f5',
+			'button_radius'           => 4,
+			'button_font_size'        => 14,
+			'button_padding'          => 8,
+			'container_bg_color'      => '#ffffff',
+			'container_border_color'  => '#e2e2e2',
+			'container_padding'       => 16,
+			'shadow_enabled'          => true,
+			'shadow_color'            => '#000000',
+			'shadow_opacity'          => 8,
+			'shadow_blur'             => 12,
+			'revisit_bg_color'        => '#ffffff',
+			'revisit_opacity'         => 55,
+			'revisit_hover_opacity'   => 100,
+		);
+	}
+
+	/**
+	 * Font choices for the Style tab. Only "family" is required per entry —
+	 * "google" is the stylesheet URL to enqueue when that preset is active,
+	 * left null for stacks that don't need a web font. Kept in the same
+	 * naming/style as the equivalent in the Alchemy Forms plugin so an admin
+	 * managing several client sites sees a familiar, consistent choice.
+	 */
+	public static function font_presets() {
+		return array(
+			'default' => array(
+				'label'  => 'Default (system font)',
+				'family' => '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+				'google' => null,
+			),
+			'inter'   => array(
+				'label'  => 'Inter',
+				'family' => "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+				'google' => 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap',
+			),
+			'classic' => array(
+				'label'  => 'Classic (Georgia)',
+				'family' => "Georgia, 'Times New Roman', serif",
+				'google' => null,
+			),
+			'modern'  => array(
+				'label'  => 'Modern (Poppins)',
+				'family' => "'Poppins', -apple-system, sans-serif",
+				'google' => 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap',
+			),
+		);
 	}
 
 	/**
@@ -97,25 +164,24 @@ class Alchemy_Cookie_Consent_Activator {
 			return;
 		}
 
-		$defaults = array(
-			'banner_message'        => "We use cookies to improve your experience and understand how visitors use this site. Choose which categories you're comfortable with.",
-			'accept_label'          => 'Accept All',
-			'reject_label'          => 'Reject All',
-			'customize_label'       => 'Customize',
-			'save_label'            => 'Save Preferences',
-			'accent_color'          => '#1a73e8',
-			'position'              => 'bottom',
-			'policy_page_id'        => 0,
-			'geo_targeting_enabled' => false,
-			'strict_countries'      => self::default_strict_countries(),
-			'light_countries'       => self::default_light_countries(),
-			'revisit_bg_color'      => '#ffffff',
-			'revisit_opacity'       => 55,
-			'revisit_hover_opacity' => 100,
-			'categories_enabled'    => array(
-				'analytics' => true,
-				'marketing' => false,
-			),
+		$defaults = array_merge(
+			self::style_defaults(),
+			array(
+				'banner_message'        => "We use cookies to improve your experience and understand how visitors use this site. Choose which categories you're comfortable with.",
+				'accept_label'          => 'Accept All',
+				'reject_label'          => 'Reject All',
+				'customize_label'       => 'Customize',
+				'save_label'            => 'Save Preferences',
+				'position'              => 'bottom',
+				'policy_page_id'        => 0,
+				'geo_targeting_enabled' => false,
+				'strict_countries'      => self::default_strict_countries(),
+				'light_countries'       => self::default_light_countries(),
+				'categories_enabled'    => array(
+					'analytics' => true,
+					'marketing' => false,
+				),
+			)
 		);
 
 		add_option( 'alchemy_cookie_consent_settings', $defaults );
