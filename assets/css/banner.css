@@ -172,11 +172,22 @@
 }
 
 .alchemy-cookie-consent-banner[data-alchemy-layout="card"] .alchemy-cookie-consent-actions {
-	flex-direction: column-reverse;
+	/* row-reverse: Accept is last in the DOM (so it's still the last thing
+	   a keyboard/screen-reader user reaches) but appears first/leftmost,
+	   as the prominent choice — matching the reference layout's Accept +
+	   Manage side by side rather than a stack of three full-width buttons. */
+	flex-direction: row-reverse;
+	flex-wrap: wrap;
 }
 
-.alchemy-cookie-consent-banner[data-alchemy-layout="card"] .alchemy-cookie-consent-btn {
-	width: 100%;
+.alchemy-cookie-consent-banner[data-alchemy-layout="card"] .alchemy-cookie-consent-btn-solid,
+.alchemy-cookie-consent-banner[data-alchemy-layout="card"] .alchemy-cookie-consent-btn-outline {
+	flex: 1 1 0;
+	text-align: center;
+}
+
+.alchemy-cookie-consent-banner[data-alchemy-layout="card"] .alchemy-cookie-consent-btn-text {
+	flex: 1 1 100%;
 	text-align: center;
 }
 

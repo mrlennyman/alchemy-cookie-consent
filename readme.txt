@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, ccpa, cookie banner, consent mode
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.9.0
+Stable tag: 1.9.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -269,6 +269,12 @@ layout), so nothing changes in appearance until a client's site is
 actually customised here.
 
 == Changelog ==
+
+= 1.9.1 =
+* Fixed: Card layout's three buttons rendered as a full-width stack —
+  changed to Accept + Reject side by side (matching the reference
+  layout's two-button prominence) with Customize as a smaller row of
+  its own, rather than three equal-weight stacked buttons.
 
 = 1.9.0 =
 * Fixed: banner CSS now uses !important throughout on the properties a
