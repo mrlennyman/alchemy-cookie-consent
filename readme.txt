@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, ccpa, cookie banner, consent mode
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.9.1
+Stable tag: 1.9.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -269,6 +269,21 @@ layout), so nothing changes in appearance until a client's site is
 actually customised here.
 
 == Changelog ==
+
+= 1.9.2 =
+* Fixed: the category checkboxes (Necessary/Analytics/Marketing) were
+  visible on every pageview instead of only after clicking Customize —
+  an author CSS rule's unconditional `display: flex` was silently
+  overriding the browser's own `[hidden]` handling regardless of
+  specificity, a pre-existing bug dating back to the banner's original
+  markup, not something introduced by the Style/Layout work. Also the
+  direct cause of the Card layout looking taller than its content
+  needed — that always-visible row was adding real height.
+* Changed: the Customize button now has a visible border and hover
+  fill (matching the Reject button's "outline" treatment) instead of
+  an underlined text-link style with no border — it was a real
+  `<button>` all along, just styled in a way that read as a stray
+  hyperlink rather than a third, lower-emphasis action.
 
 = 1.9.1 =
 * Fixed: Card layout's three buttons rendered as a full-width stack —

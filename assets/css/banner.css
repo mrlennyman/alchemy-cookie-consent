@@ -84,6 +84,16 @@
 	color: var(--alchemy-cookie-consent-text-color, #333) !important;
 }
 
+/* An author rule's `display` always wins over the browser's own
+   `[hidden] { display: none }` regardless of specificity — origin is
+   decided before specificity is even compared — so the unconditional
+   `display: flex` above was silently defeating the `hidden` attribute
+   banner.js toggles: the category checkboxes were visible on every
+   pageview, not just after clicking Customize. This restores it. */
+.alchemy-cookie-consent-categories[hidden] {
+	display: none !important;
+}
+
 .alchemy-cookie-consent-actions {
 	display: flex;
 	gap: 8px;
@@ -130,14 +140,22 @@
 	background: var(--alchemy-cookie-consent-button-outline-hover-bg, #f5f5f5) !important;
 }
 
+/* A "ghost" button — no fill, but a visible border and hover state so it
+   reads as a third, lower-emphasis action alongside solid Accept and
+   outlined Reject, rather than a stray underlined hyperlink sitting in a
+   button-shaped row (the underline was the main thing making it read as
+   a link rather than a button; a bare-transparent style with no border
+   and no underline would look like nothing at all, not a button). */
 .alchemy-cookie-consent-btn-text {
 	background: transparent !important;
+	border-color: var(--alchemy-cookie-consent-button-outline-color, #ccc) !important;
 	color: #555 !important;
-	text-decoration: underline;
+	text-decoration: none !important;
 }
 
 .alchemy-cookie-consent-btn-text:hover,
 .alchemy-cookie-consent-btn-text:focus-visible {
+	background: var(--alchemy-cookie-consent-button-outline-hover-bg, #f5f5f5) !important;
 	color: var(--alchemy-cookie-consent-accent, #1a73e8) !important;
 }
 
