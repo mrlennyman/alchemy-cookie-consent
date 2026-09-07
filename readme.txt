@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, ccpa, cookie banner, consent mode
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.9.2
+Stable tag: 1.9.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -269,6 +269,15 @@ layout), so nothing changes in appearance until a client's site is
 actually customised here.
 
 == Changelog ==
+
+= 1.9.3 =
+* Fixed: the Card layout rendered taller than its content needed. The
+  message paragraph's `flex: 1 1 320px` and the heading row's
+  `flex: 1 1 100%` were both written for the Bar layout's row-direction
+  container, where flex-basis sets a starting *width*. Card's container
+  is flex-direction: column, so that same flex-basis was being applied
+  to *height* instead — a 320px-tall message box, a full-container-tall
+  heading row. Both reset to natural (auto) height inside Card.
 
 = 1.9.2 =
 * Fixed: the category checkboxes (Necessary/Analytics/Marketing) were

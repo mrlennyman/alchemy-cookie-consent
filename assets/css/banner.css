@@ -45,7 +45,11 @@
 	display: flex;
 	align-items: center;
 	gap: 8px;
-	flex: 1 1 100%;
+	/* Only ever rendered in the Card layout, whose .alchemy-cookie-consent-inner
+	   is flex-direction: column — so this needs auto (natural) sizing on
+	   the main axis, not a row-oriented percentage basis (a "1 1 100%"
+	   here would mean 100% of the container's *height*, not its width). */
+	flex: 0 1 auto;
 }
 
 .alchemy-cookie-consent-icon {
@@ -187,6 +191,17 @@
 	margin: 0;
 	flex-direction: column;
 	align-items: stretch;
+}
+
+/* .alchemy-cookie-consent-message's 320px flex-basis (and categories'
+   100%) are written for the Bar layout's row-direction container, where
+   flex-basis sets a starting *width*. Inside Card's column-direction
+   container, an inherited flex-basis applies to *height* instead — the
+   actual cause of the Card layout rendering taller than its content
+   needed. Reset both to auto (natural content height) here. */
+.alchemy-cookie-consent-banner[data-alchemy-layout="card"] .alchemy-cookie-consent-message,
+.alchemy-cookie-consent-banner[data-alchemy-layout="card"] .alchemy-cookie-consent-categories {
+	flex: 0 1 auto;
 }
 
 .alchemy-cookie-consent-banner[data-alchemy-layout="card"] .alchemy-cookie-consent-actions {
