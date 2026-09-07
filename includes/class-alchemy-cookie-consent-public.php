@@ -121,20 +121,47 @@ class Alchemy_Cookie_Consent_Public {
 		return $notices;
 	}
 
+	/**
+	 * Heading/Body/Button may independently pick the same Google-sourced
+	 * family (or a "System" pseudo-font needing no web font at all) —
+	 * combine every family+weight actually needed into one Google Fonts
+	 * request instead of up to three, deduplicating by family. Has to run
+	 * here (before wp_head prints enqueued styles), not in the
+	 * wp_footer-rendered template — enqueuing a stylesheet that late
+	 * wouldn't retroactively add it to <head>.
+	 */
+	private function enqueue_selected_fonts( $settings ) {
+		$defaults = Alchemy_Cookie_Consent_Activator::style_defaults();
+		$fonts    = Alchemy_Cookie_Consent_Activator::google_fonts();
+
+		$families = array();
+		foreach ( array( 'heading', 'body', 'button' ) as $role ) {
+			$font_key = isset( $settings[ $role . '_font' ] ) && isset( $fonts[ $settings[ $role . '_font' ] ] ) ? $settings[ $role . '_font' ] : $defaults[ $role . '_font' ];
+			if ( empty( $fonts[ $font_key ]['google'] ) ) {
+				continue;
+			}
+			$weight_key                        = $role . '_weight';
+			$weight                            = isset( $settings[ $weight_key ] ) ? (int) $settings[ $weight_key ] : (int) $defaults[ $weight_key ];
+			$families[ $font_key ][ $weight ]  = true;
+		}
+		if ( ! $families ) {
+			return;
+		}
+
+		$parts = array();
+		foreach ( $families as $family => $weights ) {
+			$parts[] = 'family=' . str_replace( ' ', '+', $family ) . ':wght@' . implode( ';', array_keys( $weights ) );
+		}
+		$url = 'https://fonts.googleapis.com/css2?' . implode( '&', $parts ) . '&display=swap';
+		wp_enqueue_style( 'alchemy-cookie-consent-fonts-' . substr( md5( $url ), 0, 8 ), $url, array(), ALCHEMY_COOKIE_CONSENT_VERSION );
+	}
+
 	public function enqueue_assets() {
 		wp_enqueue_style( 'alchemy-cookie-consent-banner', ALCHEMY_COOKIE_CONSENT_URL . 'assets/css/banner.css', array(), ALCHEMY_COOKIE_CONSENT_VERSION );
 		wp_enqueue_script( 'alchemy-cookie-consent-banner', ALCHEMY_COOKIE_CONSENT_URL . 'assets/js/banner.js', array(), ALCHEMY_COOKIE_CONSENT_VERSION, true );
 
 		$settings = $this->get_settings();
-
-		// Has to happen here (before wp_head prints enqueued styles), not in
-		// the wp_footer-rendered template — enqueuing a stylesheet that late
-		// wouldn't retroactively add it to <head>.
-		$font_presets = Alchemy_Cookie_Consent_Activator::font_presets();
-		$font_preset  = isset( $settings['font_preset'] ) && isset( $font_presets[ $settings['font_preset'] ] ) ? $settings['font_preset'] : 'default';
-		if ( ! empty( $font_presets[ $font_preset ]['google'] ) ) {
-			wp_enqueue_style( 'alchemy-cookie-consent-google-font', $font_presets[ $font_preset ]['google'], array(), ALCHEMY_COOKIE_CONSENT_VERSION );
-		}
+		$this->enqueue_selected_fonts( $settings );
 
 		wp_localize_script(
 			'alchemy-cookie-consent-banner',

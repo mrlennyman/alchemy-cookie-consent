@@ -36,12 +36,14 @@ class Alchemy_Cookie_Consent_Activator {
 	 */
 	private static function merge_new_setting_defaults() {
 		$settings = get_option( 'alchemy_cookie_consent_settings', array() );
+		self::migrate_legacy_typography( $settings );
 		$defaults = array_merge(
 			array(
 				'geo_targeting_enabled' => false, // off by default — never silently changes existing behaviour on upgrade.
 				'strict_countries'      => self::default_strict_countries(),
 				'light_countries'       => self::default_light_countries(),
 				'policy_page_id'        => 0,
+				'heading_text'          => 'We use cookies',
 			),
 			self::style_defaults()
 		);
@@ -49,20 +51,61 @@ class Alchemy_Cookie_Consent_Activator {
 	}
 
 	/**
+	 * 1.8.0 had one font_preset + font_size + text_color controlling all
+	 * banner text. 1.9.0 split that into independent Heading/Body/Button
+	 * font+weight+size (matching the Forms plugin's per-component style
+	 * system), so a site that already customised those three old keys needs
+	 * them mapped onto the new ones it actually corresponds to (Body, since
+	 * that's what font_size/text_color always styled) rather than silently
+	 * reverting to the new defaults. Runs before the defaults merge above,
+	 * so a migrated value counts as "already set" and wins over it.
+	 */
+	private static function migrate_legacy_typography( array &$settings ) {
+		if ( isset( $settings['font_preset'] ) && ! isset( $settings['body_font'] ) ) {
+			$legacy_font_map            = array(
+				'default' => '__system_sans__',
+				'inter'   => 'Inter',
+				'classic' => '__system_serif__',
+				'modern'  => 'Poppins',
+			);
+			$settings['body_font']      = isset( $legacy_font_map[ $settings['font_preset'] ] ) ? $legacy_font_map[ $settings['font_preset'] ] : '__system_sans__';
+			$settings['button_font']    = $settings['body_font'];
+			$settings['heading_font']   = $settings['body_font'];
+		}
+		if ( isset( $settings['font_size'] ) && ! isset( $settings['body_font_size'] ) ) {
+			$settings['body_font_size'] = $settings['font_size'];
+		}
+		if ( isset( $settings['text_color'] ) && ! isset( $settings['body_color'] ) ) {
+			$settings['body_color'] = $settings['text_color'];
+		}
+	}
+
+	/**
 	 * Every visual/style setting, in one place — shared between seeding
 	 * (below), the Style tab's form (class-alchemy-cookie-consent-admin.php),
 	 * and the banner template's CSS-variable resolver
 	 * (templates/banner.php), so the three can't drift out of sync.
-	 * Values match what banner.css already hardcodes, so a fresh install's
-	 * appearance is unchanged until a client actually customises the Style
-	 * tab.
+	 * Values match what banner.css already hardcodes (all three text roles
+	 * default to a system font — no Google Fonts request — so the readme's
+	 * "no external requests" claim stays true until an admin actively picks
+	 * a Google-sourced font), so a fresh install's appearance is unchanged
+	 * until a client actually customises the Style tab.
 	 */
 	public static function style_defaults() {
 		return array(
 			'accent_color'            => '#1a73e8',
-			'font_preset'             => 'default',
-			'font_size'               => 14,
-			'text_color'              => '#333333',
+			'layout_preset'           => 'bar',
+			'card_position'           => 'left',
+			'heading_font'            => '__system_sans__',
+			'heading_weight'          => 600,
+			'heading_font_size'       => 18,
+			'heading_color'           => '#1a1a1a',
+			'body_font'               => '__system_sans__',
+			'body_weight'             => 400,
+			'body_font_size'          => 14,
+			'body_color'              => '#333333',
+			'button_font'             => '__system_sans__',
+			'button_weight'           => 600,
 			'button_hover_color'      => '#155cba',
 			'button_text_color'       => '#ffffff',
 			'button_outline_color'    => '#cccccc',
@@ -84,33 +127,154 @@ class Alchemy_Cookie_Consent_Activator {
 	}
 
 	/**
-	 * Font choices for the Style tab. Only "family" is required per entry —
-	 * "google" is the stylesheet URL to enqueue when that preset is active,
-	 * left null for stacks that don't need a web font. Kept in the same
-	 * naming/style as the equivalent in the Alchemy Forms plugin so an admin
-	 * managing several client sites sees a familiar, consistent choice.
+	 * Curated Google Fonts for the Heading/Body/Button pickers — the same
+	 * list as the Alchemy Forms plugin's Style panel, so an admin managing
+	 * several client sites sees identical choices in both. The two
+	 * "__system_*__" entries need no web font request at all.
 	 */
-	public static function font_presets() {
+	public static function google_fonts() {
 		return array(
-			'default' => array(
-				'label'  => 'Default (system font)',
-				'family' => '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-				'google' => null,
+			'__system_sans__'   => array(
+				'label'  => 'System sans-serif (no font loading)',
+				'family' => "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+				'google' => false,
 			),
-			'inter'   => array(
+			'__system_serif__'  => array(
+				'label'  => 'System serif (no font loading)',
+				'family' => "Georgia, 'Times New Roman', serif",
+				'google' => false,
+			),
+			'Arial'             => array(
+				'label'  => 'Arial',
+				'family' => 'Arial, Helvetica, sans-serif',
+				'google' => false,
+			),
+			'Fraunces'          => array(
+				'label'  => 'Fraunces',
+				'family' => "'Fraunces', Georgia, serif",
+				'google' => true,
+			),
+			'Playfair Display'  => array(
+				'label'  => 'Playfair Display',
+				'family' => "'Playfair Display', Georgia, serif",
+				'google' => true,
+			),
+			'Merriweather'      => array(
+				'label'  => 'Merriweather',
+				'family' => "'Merriweather', Georgia, serif",
+				'google' => true,
+			),
+			'Lora'              => array(
+				'label'  => 'Lora',
+				'family' => "'Lora', Georgia, serif",
+				'google' => true,
+			),
+			'Inter'             => array(
 				'label'  => 'Inter',
 				'family' => "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-				'google' => 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap',
+				'google' => true,
 			),
-			'classic' => array(
-				'label'  => 'Classic (Georgia)',
-				'family' => "Georgia, 'Times New Roman', serif",
-				'google' => null,
+			'Roboto'            => array(
+				'label'  => 'Roboto',
+				'family' => "'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+				'google' => true,
 			),
-			'modern'  => array(
-				'label'  => 'Modern (Poppins)',
-				'family' => "'Poppins', -apple-system, sans-serif",
-				'google' => 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap',
+			'Open Sans'         => array(
+				'label'  => 'Open Sans',
+				'family' => "'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+				'google' => true,
+			),
+			'Lato'              => array(
+				'label'  => 'Lato',
+				'family' => "'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+				'google' => true,
+			),
+			'Poppins'           => array(
+				'label'  => 'Poppins',
+				'family' => "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
+				'google' => true,
+			),
+			'Montserrat'        => array(
+				'label'  => 'Montserrat',
+				'family' => "'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif",
+				'google' => true,
+			),
+			'Nunito'            => array(
+				'label'  => 'Nunito',
+				'family' => "'Nunito', -apple-system, BlinkMacSystemFont, sans-serif",
+				'google' => true,
+			),
+			'Quicksand'         => array(
+				'label'  => 'Quicksand',
+				'family' => "'Quicksand', -apple-system, BlinkMacSystemFont, sans-serif",
+				'google' => true,
+			),
+			'Work Sans'         => array(
+				'label'  => 'Work Sans',
+				'family' => "'Work Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+				'google' => true,
+			),
+			'DM Sans'           => array(
+				'label'  => 'DM Sans',
+				'family' => "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+				'google' => true,
+			),
+			'Manrope'           => array(
+				'label'  => 'Manrope',
+				'family' => "'Manrope', -apple-system, BlinkMacSystemFont, sans-serif",
+				'google' => true,
+			),
+			'Rubik'             => array(
+				'label'  => 'Rubik',
+				'family' => "'Rubik', -apple-system, BlinkMacSystemFont, sans-serif",
+				'google' => true,
+			),
+			'Space Grotesk'     => array(
+				'label'  => 'Space Grotesk',
+				'family' => "'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif",
+				'google' => true,
+			),
+			'Oswald'            => array(
+				'label'  => 'Oswald',
+				'family' => "'Oswald', -apple-system, BlinkMacSystemFont, sans-serif",
+				'google' => true,
+			),
+		);
+	}
+
+	/**
+	 * Font weights offered for each Heading/Body/Button picker. Not every
+	 * Google Fonts family technically ships every one of these, but the CSS2
+	 * API snaps to the closest weight it actually has rather than erroring,
+	 * so a uniform list keeps this simple without per-font weight validation.
+	 */
+	public static function font_weight_options() {
+		return array(
+			300 => 'Light (300)',
+			400 => 'Regular (400)',
+			500 => 'Medium (500)',
+			600 => 'Semibold (600)',
+			700 => 'Bold (700)',
+			800 => 'Extrabold (800)',
+		);
+	}
+
+	/**
+	 * Layout presets for the Style tab's "Layout" section — a curated,
+	 * mostly-fixed structure (positioning, corner radius, shadow weight,
+	 * icon) rather than another pile of individually tunable fields;
+	 * colors/fonts/button styling from the rest of the Style tab still
+	 * apply on top of whichever one is chosen.
+	 */
+	public static function layout_presets() {
+		return array(
+			'bar'  => array(
+				'label'       => 'Bar (full-width, bottom)',
+				'description' => 'The classic edge-to-edge bottom bar. No heading shown.',
+			),
+			'card' => array(
+				'label'       => 'Card (floating, corner)',
+				'description' => 'A rounded card anchored to a bottom corner, with a heading and icon — closer to what most visitors expect from a modern cookie prompt.',
 			),
 		);
 	}
@@ -168,6 +332,7 @@ class Alchemy_Cookie_Consent_Activator {
 			self::style_defaults(),
 			array(
 				'banner_message'        => "We use cookies to improve your experience and understand how visitors use this site. Choose which categories you're comfortable with.",
+				'heading_text'          => 'We use cookies',
 				'accept_label'          => 'Accept All',
 				'reject_label'          => 'Reject All',
 				'customize_label'       => 'Customize',

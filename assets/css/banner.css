@@ -1,18 +1,35 @@
+/*
+ * !important is used deliberately and throughout this file on the
+ * properties a host theme most commonly sets generically (button
+ * background/color/border/padding/font, box-sizing) — this banner has to
+ * render correctly on whatever theme a given client site happens to run,
+ * and a theme's own `button { ... }` or `.btn` rule can otherwise win via
+ * load order or a slightly higher-specificity selector we can't predict
+ * in advance. This is the same approach most commercial cookie-consent
+ * tools take for the same reason.
+ */
+
 .alchemy-cookie-consent-banner {
-	position: fixed;
+	position: fixed !important;
 	left: 0;
 	right: 0;
 	bottom: 0;
-	background: var(--alchemy-cookie-consent-container-bg, #fff);
+	background: var(--alchemy-cookie-consent-container-bg, #fff) !important;
 	border-top: 1px solid var(--alchemy-cookie-consent-container-border, #e2e2e2);
-	box-shadow: var(--alchemy-cookie-consent-shadow, 0 -2px 12px rgba(0, 0, 0, 0.08));
+	box-shadow: var(--alchemy-cookie-consent-shadow, 0 -2px 12px rgba(0, 0, 0, 0.08)) !important;
 	z-index: 999999;
-	font-family: var(--alchemy-cookie-consent-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
-	padding: var(--alchemy-cookie-consent-container-padding, 16px);
+	font-family: var(--alchemy-cookie-consent-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif) !important;
+	font-weight: var(--alchemy-cookie-consent-font-weight, 400);
+	padding: var(--alchemy-cookie-consent-container-padding, 16px) !important;
+	box-sizing: border-box;
+}
+
+.alchemy-cookie-consent-banner * {
+	box-sizing: border-box;
 }
 
 .alchemy-cookie-consent-hidden {
-	display: none;
+	display: none !important;
 }
 
 .alchemy-cookie-consent-inner {
@@ -24,16 +41,36 @@
 	gap: 12px;
 }
 
+.alchemy-cookie-consent-heading-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex: 1 1 100%;
+}
+
+.alchemy-cookie-consent-icon {
+	font-size: 22px;
+	line-height: 1;
+}
+
+.alchemy-cookie-consent-heading {
+	margin: 0;
+	font-family: var(--alchemy-cookie-consent-heading-font, inherit) !important;
+	font-weight: var(--alchemy-cookie-consent-heading-weight, 600);
+	font-size: var(--alchemy-cookie-consent-heading-font-size, 18px) !important;
+	color: var(--alchemy-cookie-consent-heading-color, #1a1a1a) !important;
+}
+
 .alchemy-cookie-consent-message {
 	flex: 1 1 320px;
 	margin: 0;
-	font-size: var(--alchemy-cookie-consent-font-size, 14px);
+	font-size: var(--alchemy-cookie-consent-font-size, 14px) !important;
 	line-height: 1.5;
-	color: var(--alchemy-cookie-consent-text-color, #333);
+	color: var(--alchemy-cookie-consent-text-color, #333) !important;
 }
 
 .alchemy-cookie-consent-policy-link {
-	color: var(--alchemy-cookie-consent-accent, #1a73e8);
+	color: var(--alchemy-cookie-consent-accent, #1a73e8) !important;
 	text-decoration: underline;
 	white-space: nowrap;
 	margin-left: 4px;
@@ -43,8 +80,8 @@
 	display: flex;
 	gap: 16px;
 	flex: 1 1 100%;
-	font-size: var(--alchemy-cookie-consent-font-size, 14px);
-	color: var(--alchemy-cookie-consent-text-color, #333);
+	font-size: var(--alchemy-cookie-consent-font-size, 14px) !important;
+	color: var(--alchemy-cookie-consent-text-color, #333) !important;
 }
 
 .alchemy-cookie-consent-actions {
@@ -54,69 +91,125 @@
 }
 
 .alchemy-cookie-consent-btn {
-	border-radius: var(--alchemy-cookie-consent-button-radius, 4px);
-	padding: var(--alchemy-cookie-consent-button-padding, 8px) calc(var(--alchemy-cookie-consent-button-padding, 8px) * 2);
-	font-size: var(--alchemy-cookie-consent-button-font-size, 14px);
-	cursor: pointer;
-	border: 1px solid transparent;
-	line-height: 1.4;
-	text-transform: uppercase;
-	letter-spacing: 0.02em;
+	-webkit-appearance: none !important;
+	appearance: none !important;
+	border-radius: var(--alchemy-cookie-consent-button-radius, 4px) !important;
+	padding: var(--alchemy-cookie-consent-button-padding, 8px) calc(var(--alchemy-cookie-consent-button-padding, 8px) * 2) !important;
+	font-family: var(--alchemy-cookie-consent-button-font, inherit) !important;
+	font-weight: var(--alchemy-cookie-consent-button-weight, 600) !important;
+	font-size: var(--alchemy-cookie-consent-button-font-size, 14px) !important;
+	cursor: pointer !important;
+	border-width: 1px !important;
+	border-style: solid !important;
+	border-color: transparent !important;
+	line-height: 1.4 !important;
+	text-transform: uppercase !important;
+	letter-spacing: 0.02em !important;
+	box-shadow: none !important;
 	transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .alchemy-cookie-consent-btn-solid {
-	background: var(--alchemy-cookie-consent-accent, #1a73e8);
-	color: var(--alchemy-cookie-consent-button-text, #fff);
+	background: var(--alchemy-cookie-consent-accent, #1a73e8) !important;
+	color: var(--alchemy-cookie-consent-button-text, #fff) !important;
 }
 
 .alchemy-cookie-consent-btn-solid:hover,
 .alchemy-cookie-consent-btn-solid:focus-visible {
-	background: var(--alchemy-cookie-consent-button-hover, #155cba);
+	background: var(--alchemy-cookie-consent-button-hover, #155cba) !important;
 }
 
 .alchemy-cookie-consent-btn-outline {
-	background: transparent;
-	border-color: var(--alchemy-cookie-consent-button-outline-color, #ccc);
-	color: var(--alchemy-cookie-consent-text-color, #333);
+	background: transparent !important;
+	border-color: var(--alchemy-cookie-consent-button-outline-color, #ccc) !important;
+	color: var(--alchemy-cookie-consent-text-color, #333) !important;
 }
 
 .alchemy-cookie-consent-btn-outline:hover,
 .alchemy-cookie-consent-btn-outline:focus-visible {
-	background: var(--alchemy-cookie-consent-button-outline-hover-bg, #f5f5f5);
+	background: var(--alchemy-cookie-consent-button-outline-hover-bg, #f5f5f5) !important;
 }
 
 .alchemy-cookie-consent-btn-text {
-	background: transparent;
-	color: #555;
+	background: transparent !important;
+	color: #555 !important;
 	text-decoration: underline;
 }
 
 .alchemy-cookie-consent-btn-text:hover,
 .alchemy-cookie-consent-btn-text:focus-visible {
-	color: var(--alchemy-cookie-consent-accent, #1a73e8);
+	color: var(--alchemy-cookie-consent-accent, #1a73e8) !important;
+}
+
+/* ---- Card layout: a floating rounded card anchored to a bottom corner,
+   instead of the full-width edge-to-edge bar above. Structural choices
+   here (radius, max-width, gap from the edge) are part of the preset, not
+   individually configurable — colors/fonts/buttons still come from the
+   same variables as the Bar layout. ---- */
+.alchemy-cookie-consent-banner[data-alchemy-layout="card"] {
+	left: auto;
+	right: auto;
+	bottom: 24px;
+	width: min(400px, calc(100vw - 32px));
+	border-top: none;
+	border-radius: 16px;
+	padding: 20px !important;
+}
+
+.alchemy-cookie-consent-banner[data-alchemy-layout="card"][data-alchemy-position="left"] {
+	left: 24px;
+}
+
+.alchemy-cookie-consent-banner[data-alchemy-layout="card"][data-alchemy-position="right"] {
+	right: 24px;
+}
+
+.alchemy-cookie-consent-banner[data-alchemy-layout="card"] .alchemy-cookie-consent-inner {
+	max-width: none;
+	margin: 0;
+	flex-direction: column;
+	align-items: stretch;
+}
+
+.alchemy-cookie-consent-banner[data-alchemy-layout="card"] .alchemy-cookie-consent-actions {
+	flex-direction: column-reverse;
+}
+
+.alchemy-cookie-consent-banner[data-alchemy-layout="card"] .alchemy-cookie-consent-btn {
+	width: 100%;
+	text-align: center;
 }
 
 .alchemy-cookie-consent-revisit {
-	position: fixed;
-	left: 16px;
+	-webkit-appearance: none !important;
+	appearance: none !important;
+	position: fixed !important;
 	bottom: 16px;
 	z-index: 999998;
 	width: 40px;
 	height: 40px;
-	border-radius: 50%;
-	background: var(--alchemy-cookie-consent-revisit-bg, rgba(255, 255, 255, 0.55));
-	border: 1px solid rgba(0, 0, 0, 0.08);
-	cursor: pointer;
+	border-radius: 50% !important;
+	background: var(--alchemy-cookie-consent-revisit-bg, rgba(255, 255, 255, 0.55)) !important;
+	border: 1px solid rgba(0, 0, 0, 0.08) !important;
+	cursor: pointer !important;
 	font-size: 18px;
+	box-shadow: none !important;
 	backdrop-filter: blur(2px);
 	-webkit-backdrop-filter: blur(2px);
 	transition: background-color 0.15s ease;
 }
 
+.alchemy-cookie-consent-revisit[data-alchemy-position="left"] {
+	left: 16px;
+}
+
+.alchemy-cookie-consent-revisit[data-alchemy-position="right"] {
+	right: 16px;
+}
+
 .alchemy-cookie-consent-revisit:hover,
 .alchemy-cookie-consent-revisit:focus-visible {
-	background: var(--alchemy-cookie-consent-revisit-bg-hover, rgba(255, 255, 255, 1));
+	background: var(--alchemy-cookie-consent-revisit-bg-hover, rgba(255, 255, 255, 1)) !important;
 }
 
 .alchemy-cookie-consent-policy-table {

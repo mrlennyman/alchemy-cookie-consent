@@ -150,6 +150,13 @@ class Alchemy_Cookie_Consent_Admin {
 			<?php wp_nonce_field( 'alchemy_cookie_consent_save_general' ); ?>
 			<table class="form-table">
 				<tr>
+					<th><label for="heading_text">Heading</label></th>
+					<td>
+						<input type="text" name="heading_text" id="heading_text" value="<?php echo esc_attr( isset( $settings['heading_text'] ) ? $settings['heading_text'] : 'We use cookies' ); ?>" class="regular-text">
+						<p class="description">Only shown when the Style tab's Layout is set to "Card".</p>
+					</td>
+				</tr>
+				<tr>
 					<th><label for="banner_message">Banner message</label></th>
 					<td><textarea name="banner_message" id="banner_message" rows="3" class="large-text"><?php echo esc_textarea( $settings['banner_message'] ); ?></textarea></td>
 				</tr>
@@ -190,6 +197,42 @@ class Alchemy_Cookie_Consent_Admin {
 	}
 
 	/**
+	 * One Font + Weight picker pair, shared by the Heading and Body sections
+	 * of the Style tab below so the two don't drift in markup. $role is the
+	 * settings-key prefix ("heading" or "body"); the font-size field is
+	 * rendered separately per caller since its min/max differ by role.
+	 */
+	private function render_font_weight_rows( $role, $label, $s ) {
+		$google_fonts = Alchemy_Cookie_Consent_Activator::google_fonts();
+		$weights      = Alchemy_Cookie_Consent_Activator::font_weight_options();
+		?>
+		<tr>
+			<th><label for="<?php echo esc_attr( $role ); ?>_font"><?php echo esc_html( $label ); ?> font</label></th>
+			<td>
+				<select name="<?php echo esc_attr( $role ); ?>_font" id="<?php echo esc_attr( $role ); ?>_font">
+					<?php foreach ( $google_fonts as $key => $font ) : ?>
+						<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $s[ $role . '_font' ], $key ); ?>><?php echo esc_html( $font['label'] ); ?></option>
+					<?php endforeach; ?>
+				</select>
+				<?php if ( 'button' !== $role ) : ?>
+					<p class="description">Non-system choices load a Google Font.</p>
+				<?php endif; ?>
+			</td>
+		</tr>
+		<tr>
+			<th><label for="<?php echo esc_attr( $role ); ?>_weight"><?php echo esc_html( $label ); ?> weight</label></th>
+			<td>
+				<select name="<?php echo esc_attr( $role ); ?>_weight" id="<?php echo esc_attr( $role ); ?>_weight">
+					<?php foreach ( $weights as $value => $weight_label ) : ?>
+						<option value="<?php echo esc_attr( $value ); ?>" <?php selected( (int) $s[ $role . '_weight' ], $value ); ?>><?php echo esc_html( $weight_label ); ?></option>
+					<?php endforeach; ?>
+				</select>
+			</td>
+		</tr>
+		<?php
+	}
+
+	/**
 	 * Every field here writes into the same flat $settings array as the
 	 * General tab (no separate nested 'style' option) — grouped onto its
 	 * own tab purely for a cleaner admin UI, not a different storage
@@ -206,31 +249,63 @@ class Alchemy_Cookie_Consent_Admin {
 			<input type="hidden" name="action" value="alchemy_cookie_consent_save_style">
 			<?php wp_nonce_field( 'alchemy_cookie_consent_save_style' ); ?>
 
-			<h2 class="title">Typography</h2>
+			<h2 class="title">Layout</h2>
 			<table class="form-table">
 				<tr>
-					<th><label for="font_preset">Font</label></th>
+					<th><label for="layout_preset">Preset</label></th>
 					<td>
-						<select name="font_preset" id="font_preset">
-							<?php foreach ( Alchemy_Cookie_Consent_Activator::font_presets() as $key => $font ) : ?>
-								<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $s['font_preset'], $key ); ?>><?php echo esc_html( $font['label'] ); ?></option>
+						<select name="layout_preset" id="layout_preset">
+							<?php foreach ( Alchemy_Cookie_Consent_Activator::layout_presets() as $key => $layout ) : ?>
+								<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $s['layout_preset'], $key ); ?>><?php echo esc_html( $layout['label'] ); ?></option>
 							<?php endforeach; ?>
 						</select>
-						<p class="description">Applies to the banner and the standalone High-Risk prompt. Non-default choices load a Google Font.</p>
+						<?php foreach ( Alchemy_Cookie_Consent_Activator::layout_presets() as $key => $layout ) : ?>
+							<p class="description alchemy-cookie-consent-layout-desc" data-layout="<?php echo esc_attr( $key ); ?>" <?php echo ( $s['layout_preset'] !== $key ) ? 'hidden' : ''; ?>><?php echo esc_html( $layout['description'] ); ?></p>
+						<?php endforeach; ?>
 					</td>
 				</tr>
+				<tr class="alchemy-cookie-consent-card-only" <?php echo ( 'card' !== $s['layout_preset'] ) ? 'style="display:none;"' : ''; ?>>
+					<th><label for="card_position">Card position</label></th>
+					<td>
+						<select name="card_position" id="card_position">
+							<option value="left" <?php selected( $s['card_position'], 'left' ); ?>>Bottom left</option>
+							<option value="right" <?php selected( $s['card_position'], 'right' ); ?>>Bottom right</option>
+						</select>
+					</td>
+				</tr>
+			</table>
+
+			<h2 class="title">Heading</h2>
+			<p class="description">Only shown in the Card layout. Text is set on the General tab.</p>
+			<table class="form-table">
+				<?php $this->render_font_weight_rows( 'heading', 'Heading', $s ); ?>
 				<tr>
-					<th><label for="font_size">Text size (px)</label></th>
-					<td><input type="number" name="font_size" id="font_size" value="<?php echo esc_attr( $s['font_size'] ); ?>" min="10" max="24" step="1" class="small-text"></td>
+					<th><label for="heading_font_size">Font size (px)</label></th>
+					<td><input type="number" name="heading_font_size" id="heading_font_size" value="<?php echo esc_attr( $s['heading_font_size'] ); ?>" min="14" max="32" step="1" class="small-text"></td>
 				</tr>
 				<tr>
-					<th><label for="text_color">Text color</label></th>
-					<td><input type="text" name="text_color" id="text_color" value="<?php echo esc_attr( $s['text_color'] ); ?>" class="alchemy-cookie-consent-color-field"></td>
+					<th><label for="heading_color">Color</label></th>
+					<td><input type="text" name="heading_color" id="heading_color" value="<?php echo esc_attr( $s['heading_color'] ); ?>" class="alchemy-cookie-consent-color-field"></td>
+				</tr>
+			</table>
+
+			<h2 class="title">Body text</h2>
+			<p class="description">The banner message and category labels, in both layouts.</p>
+			<table class="form-table">
+				<?php $this->render_font_weight_rows( 'body', 'Body', $s ); ?>
+				<tr>
+					<th><label for="body_font_size">Font size (px)</label></th>
+					<td><input type="number" name="body_font_size" id="body_font_size" value="<?php echo esc_attr( $s['body_font_size'] ); ?>" min="10" max="24" step="1" class="small-text"></td>
+				</tr>
+				<tr>
+					<th><label for="body_color">Color</label></th>
+					<td><input type="text" name="body_color" id="body_color" value="<?php echo esc_attr( $s['body_color'] ); ?>" class="alchemy-cookie-consent-color-field"></td>
 				</tr>
 			</table>
 
 			<h2 class="title">Buttons</h2>
 			<table class="form-table">
+				<?php $this->render_font_weight_rows( 'button', 'Button', $s ); ?>
 				<tr>
 					<th><label for="accent_color">Accent / button color</label></th>
 					<td>
@@ -333,6 +408,13 @@ class Alchemy_Cookie_Consent_Admin {
 		<script>
 		jQuery( function ( $ ) {
 			$( '.alchemy-cookie-consent-color-field' ).wpColorPicker();
+
+			$( '#layout_preset' ).on( 'change', function () {
+				var layout = this.value;
+				$( '.alchemy-cookie-consent-layout-desc' ).prop( 'hidden', true );
+				$( '.alchemy-cookie-consent-layout-desc[data-layout="' + layout + '"]' ).prop( 'hidden', false );
+				$( '.alchemy-cookie-consent-card-only' ).toggle( 'card' === layout );
+			} ).trigger( 'change' );
 		} );
 		</script>
 		<?php
@@ -618,6 +700,7 @@ class Alchemy_Cookie_Consent_Admin {
 		$this->verify_admin_request( 'alchemy_cookie_consent_save_general' );
 
 		$settings                    = get_option( 'alchemy_cookie_consent_settings' );
+		$settings['heading_text']    = isset( $_POST['heading_text'] ) ? sanitize_text_field( wp_unslash( $_POST['heading_text'] ) ) : 'We use cookies';
 		$settings['banner_message']  = isset( $_POST['banner_message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['banner_message'] ) ) : '';
 		$settings['accept_label']    = isset( $_POST['accept_label'] ) ? sanitize_text_field( wp_unslash( $_POST['accept_label'] ) ) : 'Accept All';
 		$settings['reject_label']    = isset( $_POST['reject_label'] ) ? sanitize_text_field( wp_unslash( $_POST['reject_label'] ) ) : 'Reject All';
@@ -628,17 +711,51 @@ class Alchemy_Cookie_Consent_Admin {
 		$this->redirect_to_tab( 'general' );
 	}
 
+	/**
+	 * Validates a posted font key against the curated Google Fonts list,
+	 * falling back to the given default rather than storing an arbitrary
+	 * string the CSS-variable resolver wouldn't recognise.
+	 */
+	private function sanitize_font_choice( $posted, $default ) {
+		$fonts = Alchemy_Cookie_Consent_Activator::google_fonts();
+		$key   = isset( $posted ) ? sanitize_text_field( wp_unslash( $posted ) ) : '';
+		return isset( $fonts[ $key ] ) ? $key : $default;
+	}
+
+	/**
+	 * Validates a posted weight against the fixed weight-option list, same
+	 * reasoning as sanitize_font_choice() above.
+	 */
+	private function sanitize_font_weight( $posted, $default ) {
+		$weights = Alchemy_Cookie_Consent_Activator::font_weight_options();
+		$value   = isset( $posted ) ? (int) $posted : 0;
+		return isset( $weights[ $value ] ) ? $value : $default;
+	}
+
 	public function save_style() {
 		$this->verify_admin_request( 'alchemy_cookie_consent_save_style' );
 
 		$settings = get_option( 'alchemy_cookie_consent_settings' );
 		$d        = Alchemy_Cookie_Consent_Activator::style_defaults();
 
-		$font_presets            = Alchemy_Cookie_Consent_Activator::font_presets();
-		$posted_font_preset      = isset( $_POST['font_preset'] ) ? sanitize_key( wp_unslash( $_POST['font_preset'] ) ) : '';
-		$settings['font_preset'] = isset( $font_presets[ $posted_font_preset ] ) ? $posted_font_preset : $d['font_preset'];
-		$settings['font_size']   = $this->sanitize_px( $_POST['font_size'] ?? null, $d['font_size'], 10, 24 );
-		$settings['text_color']  = isset( $_POST['text_color'] ) ? $this->sanitize_hex_color_or_default( $_POST['text_color'], $d['text_color'] ) : $d['text_color'];
+		$layouts                  = Alchemy_Cookie_Consent_Activator::layout_presets();
+		$posted_layout            = isset( $_POST['layout_preset'] ) ? sanitize_key( wp_unslash( $_POST['layout_preset'] ) ) : '';
+		$settings['layout_preset'] = isset( $layouts[ $posted_layout ] ) ? $posted_layout : $d['layout_preset'];
+		$posted_position          = isset( $_POST['card_position'] ) ? sanitize_key( wp_unslash( $_POST['card_position'] ) ) : '';
+		$settings['card_position'] = in_array( $posted_position, array( 'left', 'right' ), true ) ? $posted_position : $d['card_position'];
+
+		$settings['heading_font']      = $this->sanitize_font_choice( $_POST['heading_font'] ?? null, $d['heading_font'] );
+		$settings['heading_weight']    = $this->sanitize_font_weight( $_POST['heading_weight'] ?? null, $d['heading_weight'] );
+		$settings['heading_font_size'] = $this->sanitize_px( $_POST['heading_font_size'] ?? null, $d['heading_font_size'], 14, 32 );
+		$settings['heading_color']     = isset( $_POST['heading_color'] ) ? $this->sanitize_hex_color_or_default( $_POST['heading_color'], $d['heading_color'] ) : $d['heading_color'];
+
+		$settings['body_font']      = $this->sanitize_font_choice( $_POST['body_font'] ?? null, $d['body_font'] );
+		$settings['body_weight']    = $this->sanitize_font_weight( $_POST['body_weight'] ?? null, $d['body_weight'] );
+		$settings['body_font_size'] = $this->sanitize_px( $_POST['body_font_size'] ?? null, $d['body_font_size'], 10, 24 );
+		$settings['body_color']     = isset( $_POST['body_color'] ) ? $this->sanitize_hex_color_or_default( $_POST['body_color'], $d['body_color'] ) : $d['body_color'];
+
+		$settings['button_font']   = $this->sanitize_font_choice( $_POST['button_font'] ?? null, $d['button_font'] );
+		$settings['button_weight'] = $this->sanitize_font_weight( $_POST['button_weight'] ?? null, $d['button_weight'] );
 
 		$settings['accent_color']            = isset( $_POST['accent_color'] ) ? $this->sanitize_hex_color_or_default( $_POST['accent_color'], $d['accent_color'] ) : $d['accent_color'];
 		$settings['button_hover_color']      = isset( $_POST['button_hover_color'] ) ? $this->sanitize_hex_color_or_default( $_POST['button_hover_color'], $d['button_hover_color'] ) : $d['button_hover_color'];

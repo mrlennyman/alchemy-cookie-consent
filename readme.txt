@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, ccpa, cookie banner, consent mode
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.8.0
+Stable tag: 1.9.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -73,8 +73,20 @@ for how detection works.
 
 == External Services ==
 
-This plugin connects to one external service, and only when geo-targeting
-is turned on (Geo Targeting tab — off by default).
+This plugin connects to two external services, both off by default.
+
+**Google Fonts.** The Style tab's Heading/Body/Button font pickers
+default to the system font stack, which loads nothing — but choosing
+any other font on that list fetches its stylesheet from
+fonts.googleapis.com, which exposes the visitor's IP address to Google
+the same way any web request does. Only the fonts actually selected are
+requested (heading/body/button sharing a choice combine into one
+request). Provider policy: Google Fonts, https://policies.google.com/privacy.
+Leave every Style tab font on its default "System" choice to avoid this
+entirely.
+
+This plugin also connects to one further external service, and only
+when geo-targeting is turned on (Geo Targeting tab — off by default).
 
 **Service used:** Cloudflare's public trace endpoint
 (https://www.cloudflare.com/cdn-cgi/trace)
@@ -99,8 +111,8 @@ visitors with an existing choice never trigger this request.
 **Provider policies:** Cloudflare Privacy Policy —
 https://www.cloudflare.com/privacypolicy/
 
-With geo-targeting left at its default (off), this plugin makes no
-external requests of any kind.
+With geo-targeting and every Style tab font left at their defaults, this
+plugin makes no external requests of any kind.
 
 == Wiring a non-Google tag (e.g. Bing UET) through GTM ==
 
@@ -220,29 +232,66 @@ already goes through.
 
 Every visual aspect of the banner in one place — Cookie Consent > Style
 — rather than scattered across other tabs or requiring theme CSS
-overrides. Applies to the main banner, the standalone High-Risk prompt,
-and the revisit button alike (they share the same underlying CSS
-variables). Grouped into four sections:
+overrides (the banner's own CSS uses !important throughout specifically
+so a host theme's generic button/container styles can't leak through).
+Applies to the main banner, the standalone High-Risk prompt, and the
+revisit button alike (they share the same underlying CSS variables).
+Grouped into five sections:
 
-* **Typography** — a font choice (system default, or Inter/Poppins via
-  Google Fonts, or Georgia for a classic look), text size, and text
-  color.
-* **Buttons** — the accent color (Accept button, links), a genuine
-  hover state for every button (previously none existed), button text
-  color, the outline button's border/text color and hover fill, corner
-  radius, font size, and padding.
+* **Layout** — Bar (the classic full-width bottom bar) or Card (a
+  rounded card anchored to a bottom corner, with a heading and icon —
+  closer to what most visitors expect from a modern cookie prompt),
+  plus which corner for Card. A curated, mostly-fixed structure rather
+  than more individually tunable fields; colors/fonts/buttons below
+  still apply on top of whichever one is chosen.
+* **Heading** — font, weight, size, and color for the Card layout's
+  heading (set on the General tab; not shown at all in Bar layout).
+* **Body text** — font, weight, size, and color for the banner message
+  and category labels, in both layouts.
+* **Buttons** — font and weight, the accent color (Accept button,
+  links), a genuine hover state for every button (previously none
+  existed), button text color, the outline button's border/text color
+  and hover fill, corner radius, font size, and padding.
 * **Container** — background color, top border color, padding, and a
   configurable drop shadow (color, opacity, blur, or switched off
   entirely).
-* **Revisit button** — color and opacity at rest/on hover (this section
-  simply moved here from the General tab; nothing about it changed).
+* **Revisit button** — color and opacity at rest/on hover.
 
+Heading/Body/Button fonts are chosen independently from a curated list
+of ~20 Google Fonts (plus two "system" options that load nothing) with
+their own weight, matching the equivalent system in the Alchemy Forms
+plugin — deliberately the same list and mechanism, so an admin managing
+several client sites sees a familiar, consistent choice in both.
 Colors use WordPress's own color picker rather than plain hex fields.
 Every field has a sensible default matching what the banner already
-looked like before this tab existed, so nothing changes in appearance
-until a client's site is actually customised here.
+looked like before this tab existed (system fonts throughout, Bar
+layout), so nothing changes in appearance until a client's site is
+actually customised here.
 
 == Changelog ==
+
+= 1.9.0 =
+* Fixed: banner CSS now uses !important throughout on the properties a
+  host theme most commonly sets generically (button background/color/
+  border/padding/font, container background/shadow), plus a
+  box-sizing reset and -webkit-appearance:none on buttons — a theme's
+  own button styling could otherwise leak through and override the
+  banner's, since the previous CSS had no defense against that.
+* Added: Layout section on the Style tab — Bar (unchanged full-width
+  bottom bar) or Card (rounded corner card with a heading and icon,
+  anchored bottom-left or bottom-right). See readme "Style Tab" section.
+* Added: independent Heading/Body/Button font pickers (~20 curated
+  Google Fonts + two no-load "System" options) each with their own
+  weight, replacing the single font_preset/font_size/text_color trio —
+  matches the equivalent system in the Alchemy Forms plugin. A site
+  that already customised the old fields has them mapped onto Body
+  (what they always styled) automatically; nothing reverts to a new
+  default.
+* Added: Heading text field (General tab) — only rendered when Layout
+  is set to Card.
+* Added: External Services disclosure for Google Fonts — off by
+  default (every font defaults to "System"), only triggered if a
+  client site's Style tab actually selects a Google-sourced font.
 
 = 1.8.0 =
 * Added: Style tab (Cookie Consent > Style) — font (with three optional
