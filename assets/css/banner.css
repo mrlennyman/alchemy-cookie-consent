@@ -286,6 +286,35 @@
 	background: var(--alchemy-cookie-consent-revisit-bg-hover, rgba(255, 255, 255, 1)) !important;
 }
 
+/* Confirms a consent change made outside the main banner (e.g. the
+   [alchemy_privacy_choices] link or GPC), where nothing else on the
+   page necessarily changes visibly. Sits just above the revisit
+   button, same corner. */
+.alchemy-cookie-consent-toast {
+	position: fixed !important;
+	bottom: 64px;
+	z-index: 999997;
+	max-width: 280px;
+	padding: 10px 14px !important;
+	border-radius: 8px !important;
+	background: var(--alchemy-cookie-consent-container-bg, #fff) !important;
+	color: var(--alchemy-cookie-consent-text-color, #333) !important;
+	border: 1px solid var(--alchemy-cookie-consent-container-border, #e2e2e2);
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+	font-family: var(--alchemy-cookie-consent-font, inherit) !important;
+	font-size: var(--alchemy-cookie-consent-font-size, 14px) !important;
+	line-height: 1.4;
+	transition: opacity 0.2s ease;
+}
+
+.alchemy-cookie-consent-toast[data-alchemy-position="left"] {
+	left: 16px;
+}
+
+.alchemy-cookie-consent-toast[data-alchemy-position="right"] {
+	right: 16px;
+}
+
 .alchemy-cookie-consent-policy-table {
 	width: 100%;
 	border-collapse: collapse;

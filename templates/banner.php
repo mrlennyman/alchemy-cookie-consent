@@ -143,6 +143,15 @@ $alchemy_style_attr = esc_attr( trim( $alchemy_style_attr ) );
 <button type="button" id="alchemy-cookie-consent-revisit" class="alchemy-cookie-consent-revisit" aria-label="Cookie settings" hidden data-alchemy-position="<?php echo esc_attr( $alchemy_position ); ?>" style="<?php echo $alchemy_style_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already run through esc_attr() when built above; re-escaping here would double-encode the quotes in a font-family value like "Segoe UI". ?>">&#127850;</button>
 
 <!--
+[alchemy_privacy_choices] (or GPC) can update the consent cookie at any
+point, including when the banner is already hidden and the revisit
+button is already showing — i.e. no other element on the page visibly
+changes. Without this, clicking it looks like nothing happened even
+though the preference genuinely saved.
+-->
+<div id="alchemy-cookie-consent-toast" class="alchemy-cookie-consent-toast alchemy-cookie-consent-hidden" role="status" aria-live="polite" data-alchemy-position="<?php echo esc_attr( $alchemy_position ); ?>" style="<?php echo $alchemy_style_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already run through esc_attr() when built above; re-escaping here would double-encode the quotes in a font-family value like "Segoe UI". ?>"></div>
+
+<!--
 Standalone compact prompt for session-recording/chat-type tools. Shown
 independently of the main banner above — it applies to every visitor
 regardless of Strict/Light/Exempt tier (see class-alchemy-cookie-consent-public.php

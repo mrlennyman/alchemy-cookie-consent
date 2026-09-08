@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, ccpa, cookie banner, consent mode
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.10.0
+Stable tag: 1.10.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -367,6 +367,16 @@ either of those ever changes, update this template alongside the code
 change, not just the changelog.
 
 == Changelog ==
+
+= 1.10.1 =
+* Fixed: clicking [alchemy_privacy_choices] (or an automatic GPC
+  opt-out) genuinely updates the consent cookie, but the only visible
+  side effects were closing the main banner and revealing the revisit
+  button — both already in that state for a returning visitor with an
+  existing choice, so the click looked like it did nothing. Added a
+  brief toast confirmation ("Preference saved — marketing tracking
+  turned off.") specifically for the explicit-click path, so there's
+  always visible feedback regardless of the banner's current state.
 
 = 1.10.0 =
 * Added: Policy Page tab (Cookie Consent > Policy Page) — generates a

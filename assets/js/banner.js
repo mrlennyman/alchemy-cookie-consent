@@ -6,6 +6,8 @@
 	var banner = document.getElementById( 'alchemy-cookie-consent-banner' );
 	var revisitBtn = document.getElementById( 'alchemy-cookie-consent-revisit' );
 	var highRiskBanner = document.getElementById( 'alchemy-cookie-consent-highrisk-banner' );
+	var toast = document.getElementById( 'alchemy-cookie-consent-toast' );
+	var toastTimer = null;
 
 	if ( ! banner ) {
 		return;
@@ -144,6 +146,27 @@
 			msg.textContent = notices.join( ' ' );
 		}
 		highRiskBanner.classList.remove( 'alchemy-cookie-consent-hidden' );
+	}
+
+	/**
+	 * Brief confirmation for a consent change triggered outside the main
+	 * banner (the [alchemy_privacy_choices] link, or GPC) — those can fire
+	 * while the banner's already hidden and the revisit button's already
+	 * showing, i.e. with no other visible change on the page at all, which
+	 * otherwise looks exactly like the click did nothing.
+	 */
+	function showToast( message ) {
+		if ( ! toast ) {
+			return;
+		}
+		toast.textContent = message;
+		toast.classList.remove( 'alchemy-cookie-consent-hidden' );
+		if ( toastTimer ) {
+			clearTimeout( toastTimer );
+		}
+		toastTimer = setTimeout( function () {
+			toast.classList.add( 'alchemy-cookie-consent-hidden' );
+		}, 4000 );
 	}
 
 	function saveHighRiskConsent( granted ) {
@@ -322,5 +345,6 @@
 			current.unshift( 'necessary' );
 		}
 		saveConsent( current, 'explicit' );
+		showToast( 'Preference saved — marketing tracking turned off.' );
 	} );
 } )();
