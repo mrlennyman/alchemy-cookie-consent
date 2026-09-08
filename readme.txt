@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, ccpa, cookie banner, consent mode
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.9.3
+Stable tag: 1.9.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -268,7 +268,112 @@ looked like before this tab existed (system fonts throughout, Bar
 layout), so nothing changes in appearance until a client's site is
 actually customised here.
 
+== Starter Cookie Policy Page Template ==
+
+The plugin doesn't generate a policy page's surrounding text — only the
+[alchemy_cookie_policy] table, the [alchemy_cookie_consent_settings_link]
+button, [alchemy_regulatory_links] table, and [alchemy_privacy_choices]
+link are dynamic. Everything else on a Cookie/Privacy Policy page is
+written by hand, per client, and pasted into that page directly. The
+template below is a maintained starting point for that — copy it into a
+new page, fill in the bracketed parts, and delete whichever optional
+sections don't apply to that particular client:
+
+  <h1>Cookie Policy</h1>
+  <em>Last updated: [DATE]</em>
+
+  <h2>What are cookies?</h2>
+  Cookies are small text files that a website stores on your device
+  when you visit. They help the site remember information about your
+  visit — like whether you're logged in, what's in your cart, or how
+  you like the site set up — and, where you've agreed to it, help us
+  understand how visitors use the site.
+
+  <h2>How we use cookies</h2>
+  We use cookies for three broad purposes:
+  <ul>
+    <li><strong>Necessary</strong> — required for the site to function
+    (staying logged in, keeping items in your cart). These can't be
+    switched off.</li>
+    <li><strong>Analytics</strong> — help us understand how visitors
+    use the site, so we can improve it. Only run if you opt in.</li>
+    <li><strong>Marketing</strong> — support advertising and
+    retargeting. Only run if you opt in, and only if this site
+    actually uses them.</li>
+  </ul>
+  Nothing outside Necessary runs before you make a choice in the
+  banner. [If geo-targeting is enabled for this site, replace the
+  previous sentence — visitors in some regions may have Analytics/
+  Marketing auto-granted with an immediate opt-out option, rather than
+  being asked first.]
+
+  [Only include this section if the Cookie List has any row flagged
+  High-risk:]
+  <h2>Session recording and live chat</h2>
+  Some tools on this site — such as session recording software or live
+  chat — ask for your consent separately from the categories above,
+  the moment you first arrive, regardless of your location. Recording
+  or chat logging never starts until you respond to that prompt.
+
+  <h2>Cookies we use</h2>
+  [alchemy_cookie_policy]
+
+  <h2>Third-party services</h2>
+  Some cookies are set by services we use rather than by us directly.
+  [List whatever this client's Cookie List tab actually has, e.g.:]
+  <a href="https://policies.google.com/privacy">Google Analytics</a>
+  processes data according to Google's own privacy policy.
+
+  <h2>Managing your preferences</h2>
+  You can change your choice at any time:
+  [alchemy_cookie_consent_settings_link]
+
+  Your choice is remembered for 6 months, or until you clear your
+  browser's cookies — after that, you'll be asked again.
+
+  [Only include this section for a client targeting US/California
+  visitors:]
+  <h2>Do Not Sell or Share My Personal Information</h2>
+  If you're a California resident, you have the right to opt out of
+  the sale or sharing of your personal information:
+  [alchemy_privacy_choices]. We also automatically honor the Global
+  Privacy Control signal if your browser sends one.
+
+  <h2>How we store your choice</h2>
+  Your preference is saved in a cookie in your own browser. We also
+  keep a record of the choice made (which categories were accepted,
+  and when) so we can demonstrate compliance if asked. This record
+  doesn't include your name or a way to directly identify you — only
+  a one-way hashed version of your IP address, which can't be reversed
+  back to the original.
+
+  <h2>Your right to complain</h2>
+  If you believe your data has been handled incorrectly, you have the
+  right to complain to the data protection authority relevant to where
+  you live:
+
+  [alchemy_regulatory_links]
+
+  <h2>Questions?</h2>
+  Contact us at <a href="mailto:[EMAIL]">[EMAIL]</a> with any questions
+  about this policy.
+
+The "6 months" and IP-hashing claims above are accurate to the current
+code (the consent cookie is set for 180 days; ip_hash is a SHA-256 hash
+of the visitor's IP salted with wp_salt(), genuinely one-way) — if
+either of those ever changes, update this template alongside the code
+change, not just the changelog.
+
 == Changelog ==
+
+= 1.9.4 =
+* Added: Starter Cookie Policy Page Template (readme section) — a
+  maintained reference for the hand-written content that always
+  surrounds this plugin's dynamic shortcodes on a client's actual
+  policy page. Replaces an older version of this template that had
+  fallen out of sync with the plugin: it referenced pre-1.6.0 shortcode
+  names ([wa_cookie_policy] etc. — two renames out of date) and
+  predated the High-Risk Consent and CCPA/GPC features entirely.
 
 = 1.9.3 =
 * Fixed: the Card layout rendered taller than its content needed. The
