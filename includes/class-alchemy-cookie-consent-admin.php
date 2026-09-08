@@ -15,6 +15,7 @@ class Alchemy_Cookie_Consent_Admin {
 		add_action( 'admin_post_alchemy_cookie_consent_save_style', array( $this, 'save_style' ) );
 		add_action( 'admin_post_alchemy_cookie_consent_save_categories', array( $this, 'save_categories' ) );
 		add_action( 'admin_post_alchemy_cookie_consent_save_cookies', array( $this, 'save_cookies' ) );
+		add_action( 'admin_post_alchemy_cookie_consent_save_policy', array( $this, 'save_policy' ) );
 		add_action( 'admin_post_alchemy_cookie_consent_export_log', array( $this, 'export_log' ) );
 		add_action( 'admin_post_alchemy_cookie_consent_save_geo', array( $this, 'save_geo' ) );
 	}
@@ -104,6 +105,7 @@ class Alchemy_Cookie_Consent_Admin {
 			'style'      => 'Style',
 			'categories' => 'Categories',
 			'cookies'    => 'Cookie List',
+			'policy'     => 'Policy Page',
 			'log'        => 'Consent Log',
 			'geo'        => 'Geo Targeting',
 		);
@@ -128,6 +130,9 @@ class Alchemy_Cookie_Consent_Admin {
 				break;
 			case 'cookies':
 				$this->render_cookies_tab();
+				break;
+			case 'policy':
+				$this->render_policy_tab();
 				break;
 			case 'log':
 				$this->render_log_tab();
@@ -643,6 +648,147 @@ class Alchemy_Cookie_Consent_Admin {
 				'notice'    => 'This site offers live chat through a third-party provider. If you start a chat, your messages are shared with that provider. You can still browse the site without using chat.',
 			),
 		);
+	}
+
+	/**
+	 * Builds the copy-paste policy page text. Deliberately leaves the
+	 * shortcodes as literal [bracket] text rather than expanding them —
+	 * the whole point is that they stay live on the pasted page, so
+	 * editing the Cookie List later updates the published page
+	 * automatically without needing to regenerate or re-paste anything.
+	 * Nothing here is pre-escaped: the caller wraps the whole result in
+	 * esc_textarea() once, so double-escaping (e.g. a "&" in the contact
+	 * email becoming "&amp;amp;") isn't a risk to guard against here.
+	 */
+	private function build_policy_page_html( $include_high_risk, $include_ccpa, $contact_email ) {
+		$last_updated = date_i18n( 'F Y' );
+		$lines        = array();
+
+		$lines[] = '<h1>Cookie Policy</h1>';
+		$lines[] = '<em>Last updated: ' . $last_updated . '</em>';
+		$lines[] = '';
+		$lines[] = '<h2>What are cookies?</h2>';
+		$lines[] = "<p>Cookies are small text files that a website stores on your device when you visit. They help the site remember information about your visit — like whether you're logged in, what's in your cart, or how you like the site set up — and, where you've agreed to it, help us understand how visitors use the site.</p>";
+		$lines[] = '';
+		$lines[] = '<h2>How we use cookies</h2>';
+		$lines[] = '<p>We use cookies for three broad purposes:</p>';
+		$lines[] = '<ul>';
+		$lines[] = "\t<li><strong>Necessary</strong> — required for the site to function (staying logged in, keeping items in your cart). These can't be switched off.</li>";
+		$lines[] = "\t<li><strong>Analytics</strong> — help us understand how visitors use the site, so we can improve it. Only run if you opt in.</li>";
+		$lines[] = "\t<li><strong>Marketing</strong> — support advertising and retargeting. Only run if you opt in, and only if this site actually uses them.</li>";
+		$lines[] = '</ul>';
+		$lines[] = '<p>Nothing outside Necessary runs before you make a choice in the banner.</p>';
+		$lines[] = '';
+
+		if ( $include_high_risk ) {
+			$lines[] = '<h2>Session recording and live chat</h2>';
+			$lines[] = '<p>Some tools on this site — such as session recording software or live chat — ask for your consent separately from the categories above, the moment you first arrive, regardless of your location. Recording or chat logging never starts until you respond to that prompt.</p>';
+			$lines[] = '';
+		}
+
+		$lines[] = '<h2>Cookies we use</h2>';
+		$lines[] = '[alchemy_cookie_policy]';
+		$lines[] = '';
+		$lines[] = '<h2>Third-party services</h2>';
+		$lines[] = '<p>Some cookies are set by services we use rather than by us directly — see the list above for the specific services this site runs, and each one\'s own privacy policy for how it handles data.</p>';
+		$lines[] = '';
+		$lines[] = '<h2>Managing your preferences</h2>';
+		$lines[] = '<p>You can change your choice at any time: [alchemy_cookie_consent_settings_link]</p>';
+		$lines[] = "<p>Your choice is remembered for 6 months, or until you clear your browser's cookies — after that, you'll be asked again.</p>";
+		$lines[] = '';
+
+		if ( $include_ccpa ) {
+			$lines[] = '<h2>Do Not Sell or Share My Personal Information</h2>';
+			$lines[] = "<p>If you're a California resident, you have the right to opt out of the sale or sharing of your personal information: [alchemy_privacy_choices]. We also automatically honor the Global Privacy Control signal if your browser sends one.</p>";
+			$lines[] = '';
+		}
+
+		$lines[] = '<h2>How we store your choice</h2>';
+		$lines[] = "<p>Your preference is saved in a cookie in your own browser. We also keep a record of the choice made (which categories were accepted, and when) so we can demonstrate compliance if asked. This record doesn't include your name or a way to directly identify you — only a one-way hashed version of your IP address, which can't be reversed back to the original.</p>";
+		$lines[] = '';
+		$lines[] = '<h2>Your right to complain</h2>';
+		$lines[] = '<p>If you believe your data has been handled incorrectly, you have the right to complain to the data protection authority relevant to where you live:</p>';
+		$lines[] = '';
+		$lines[] = '[alchemy_regulatory_links]';
+		$lines[] = '';
+		$lines[] = '<h2>Questions?</h2>';
+		$lines[] = '<p>Contact us at <a href="mailto:' . $contact_email . '">' . $contact_email . '</a> with any questions about this policy.</p>';
+
+		return implode( "\n", $lines );
+	}
+
+	private function render_policy_tab() {
+		$settings      = get_option( 'alchemy_cookie_consent_settings' );
+		$include_ccpa  = isset( $settings['policy_include_ccpa'] ) ? ! empty( $settings['policy_include_ccpa'] ) : true;
+		$contact_email = ! empty( $settings['policy_contact_email'] ) ? $settings['policy_contact_email'] : get_option( 'admin_email' );
+
+		$cookies           = get_option( 'alchemy_cookie_consent_cookie_list', array() );
+		$include_high_risk = false;
+		foreach ( $cookies as $c ) {
+			if ( ! empty( $c['high_risk'] ) ) {
+				$include_high_risk = true;
+				break;
+			}
+		}
+
+		$page_html = $this->build_policy_page_html( $include_high_risk, $include_ccpa, $contact_email );
+		?>
+		<p>Generates a ready-to-paste Cookie/Privacy Policy page from the current Cookie List and settings below. The shortcodes inside stay live once pasted — editing the Cookie List later updates the published page automatically, with nothing to regenerate or re-paste.</p>
+		<?php if ( $include_high_risk ) : ?>
+			<p class="description">The Cookie List has at least one row flagged High-risk, so the session-recording/chat section is included automatically below.</p>
+		<?php else : ?>
+			<p class="description">No Cookie List row is currently flagged High-risk, so that section is left out. Flag one on the Cookie List tab, then revisit this tab to include it.</p>
+		<?php endif; ?>
+
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<input type="hidden" name="action" value="alchemy_cookie_consent_save_policy">
+			<?php wp_nonce_field( 'alchemy_cookie_consent_save_policy' ); ?>
+			<table class="form-table">
+				<tr>
+					<th><label for="policy_contact_email">Contact email</label></th>
+					<td>
+						<input type="email" name="policy_contact_email" id="policy_contact_email" value="<?php echo esc_attr( $contact_email ); ?>" class="regular-text">
+						<p class="description">Defaults to this site's admin email unless changed here.</p>
+					</td>
+				</tr>
+				<tr>
+					<th>California (CCPA)</th>
+					<td><label><input type="checkbox" name="policy_include_ccpa" <?php checked( $include_ccpa ); ?>> Include the "Do Not Sell or Share" section — leave this on unless this site clearly has no US/California visitors.</label></td>
+				</tr>
+			</table>
+			<?php submit_button( 'Save &amp; Regenerate' ); ?>
+		</form>
+
+		<h2 class="title">Copy this into a new page</h2>
+		<textarea id="alchemy-cookie-consent-policy-output" readonly rows="30" class="large-text code" style="font-family: monospace;"><?php echo esc_textarea( $page_html ); ?></textarea>
+		<p>
+			<button type="button" class="button button-primary" id="alchemy-cookie-consent-copy-policy">Copy to Clipboard</button>
+			<span id="alchemy-cookie-consent-copy-confirm" style="display:none; color: #2271b1; margin-left: 8px;">Copied!</span>
+		</p>
+		<script>
+		document.getElementById( 'alchemy-cookie-consent-copy-policy' ).addEventListener( 'click', function () {
+			var textarea = document.getElementById( 'alchemy-cookie-consent-policy-output' );
+			textarea.select();
+			navigator.clipboard.writeText( textarea.value ).then( function () {
+				var confirmEl = document.getElementById( 'alchemy-cookie-consent-copy-confirm' );
+				confirmEl.style.display = 'inline';
+				setTimeout( function () { confirmEl.style.display = 'none'; }, 2000 );
+			} );
+		} );
+		</script>
+		<?php
+	}
+
+	public function save_policy() {
+		$this->verify_admin_request( 'alchemy_cookie_consent_save_policy' );
+
+		$settings                          = get_option( 'alchemy_cookie_consent_settings' );
+		$settings['policy_include_ccpa']   = ! empty( $_POST['policy_include_ccpa'] );
+		$posted_email                      = isset( $_POST['policy_contact_email'] ) ? sanitize_email( wp_unslash( $_POST['policy_contact_email'] ) ) : '';
+		$settings['policy_contact_email']  = is_email( $posted_email ) ? $posted_email : '';
+
+		update_option( 'alchemy_cookie_consent_settings', $settings );
+		$this->redirect_to_tab( 'policy' );
 	}
 
 	private function render_log_tab() {

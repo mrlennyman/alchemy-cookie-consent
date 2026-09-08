@@ -44,6 +44,8 @@ class Alchemy_Cookie_Consent_Activator {
 				'light_countries'       => self::default_light_countries(),
 				'policy_page_id'        => 0,
 				'heading_text'          => 'We use cookies',
+				'policy_include_ccpa'   => true,
+				'policy_contact_email'  => '',
 			),
 			self::style_defaults()
 		);
@@ -339,6 +341,8 @@ class Alchemy_Cookie_Consent_Activator {
 				'save_label'            => 'Save Preferences',
 				'position'              => 'bottom',
 				'policy_page_id'        => 0,
+				'policy_include_ccpa'   => true,
+				'policy_contact_email'  => '',
 				'geo_targeting_enabled' => false,
 				'strict_countries'      => self::default_strict_countries(),
 				'light_countries'       => self::default_light_countries(),

@@ -266,7 +266,7 @@ class Alchemy_Cookie_Consent_Public {
 		// already verified by check_ajax_referer() in ajax_save_consent(), the
 		// only caller of this private method; the sniff can't see across methods.
 		$source = isset( $_POST['source'] ) ? sanitize_key( wp_unslash( $_POST['source'] ) ) : 'explicit';
-		if ( ! in_array( $source, array( 'explicit', 'geo-light', 'geo-exempt', 'gpc' ), true ) ) {
+		if ( ! in_array( $source, array( 'explicit', 'geo-light', 'geo-exempt', 'gpc', 'dismissed' ), true ) ) {
 			$source = 'explicit';
 		}
 

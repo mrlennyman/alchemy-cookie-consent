@@ -20,12 +20,42 @@
 	z-index: 999999;
 	font-family: var(--alchemy-cookie-consent-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif) !important;
 	font-weight: var(--alchemy-cookie-consent-font-weight, 400);
-	padding: var(--alchemy-cookie-consent-container-padding, 16px) !important;
+	/* Extra right padding reserves room for the dismiss "x" so it never
+	   sits on top of the message text. */
+	padding: var(--alchemy-cookie-consent-container-padding, 16px) calc(var(--alchemy-cookie-consent-container-padding, 16px) + 28px) var(--alchemy-cookie-consent-container-padding, 16px) var(--alchemy-cookie-consent-container-padding, 16px) !important;
 	box-sizing: border-box;
 }
 
 .alchemy-cookie-consent-banner * {
 	box-sizing: border-box;
+}
+
+.alchemy-cookie-consent-dismiss {
+	-webkit-appearance: none !important;
+	appearance: none !important;
+	position: absolute !important;
+	top: 8px;
+	right: 8px;
+	width: 24px;
+	height: 24px;
+	line-height: 22px;
+	text-align: center;
+	padding: 0 !important;
+	border: none !important;
+	border-radius: 50% !important;
+	background: transparent !important;
+	color: var(--alchemy-cookie-consent-text-color, #333) !important;
+	font-size: 18px;
+	cursor: pointer !important;
+	box-shadow: none !important;
+	opacity: 0.5;
+	transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.alchemy-cookie-consent-dismiss:hover,
+.alchemy-cookie-consent-dismiss:focus-visible {
+	opacity: 1;
+	background: rgba(0, 0, 0, 0.06) !important;
 }
 
 .alchemy-cookie-consent-hidden {

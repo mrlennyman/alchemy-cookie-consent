@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, ccpa, cookie banner, consent mode
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.9.4
+Stable tag: 1.10.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -270,14 +270,16 @@ actually customised here.
 
 == Starter Cookie Policy Page Template ==
 
-The plugin doesn't generate a policy page's surrounding text — only the
-[alchemy_cookie_policy] table, the [alchemy_cookie_consent_settings_link]
-button, [alchemy_regulatory_links] table, and [alchemy_privacy_choices]
-link are dynamic. Everything else on a Cookie/Privacy Policy page is
-written by hand, per client, and pasted into that page directly. The
-template below is a maintained starting point for that — copy it into a
-new page, fill in the bracketed parts, and delete whichever optional
-sections don't apply to that particular client:
+Cookie Consent > Policy Page generates this same content live from the
+site's actual Cookie List and settings (contact email, whether to
+include the High-Risk and CCPA sections) — a "Copy to Clipboard" button
+is the fastest way to get a working page for a given client, and it's
+always in sync since the shortcodes inside stay live after pasting.
+
+The version below is the static reference this is built from — useful
+for understanding the structure without opening wp-admin, but the
+generator is the one to actually use, since it fills in real values
+rather than the bracketed placeholders here:
 
   <h1>Cookie Policy</h1>
   <em>Last updated: [DATE]</em>
@@ -365,6 +367,23 @@ either of those ever changes, update this template alongside the code
 change, not just the changelog.
 
 == Changelog ==
+
+= 1.10.0 =
+* Added: Policy Page tab (Cookie Consent > Policy Page) — generates a
+  ready-to-paste Cookie Policy page from the site's actual Cookie List
+  and settings, with a Copy to Clipboard button. The generated
+  shortcodes stay literal (not pre-rendered), so the pasted page keeps
+  reflecting future Cookie List edits automatically. The High-Risk
+  section is included automatically based on whether any Cookie List
+  row is flagged High-risk; the CCPA section and contact email
+  (defaulting to the site's admin email) are configurable on the same
+  tab. See readme "Starter Cookie Policy Page Template" section.
+* Added: a "Don't show again" dismiss control (a small x, top-right of
+  the banner) — functionally identical to Reject (necessary-only,
+  nothing granted; dismissing without an actual choice can't safely
+  mean "assume they're fine with tracking"), logged with its own
+  "dismissed" source for audit-trail clarity from an explicit Reject
+  All click.
 
 = 1.9.4 =
 * Added: Starter Cookie Policy Page Template (readme section) — a

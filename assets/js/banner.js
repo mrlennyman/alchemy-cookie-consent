@@ -260,6 +260,14 @@
 		saveConsent( [ 'necessary' ], 'explicit' );
 	} );
 
+	// "Don't show again" — functionally identical to Reject (necessary-only,
+	// nothing granted), since dismissing without an actual choice can never
+	// safely be treated as "assume they're fine with tracking." Logged with
+	// its own "dismissed" source for audit-trail clarity.
+	document.getElementById( 'alchemy-cookie-consent-dismiss' ).addEventListener( 'click', function () {
+		saveConsent( [ 'necessary' ], 'dismissed' );
+	} );
+
 	document.getElementById( 'alchemy-cookie-consent-customize' ).addEventListener( 'click', function () {
 		banner.querySelector( '.alchemy-cookie-consent-categories' ).hidden = false;
 		document.getElementById( 'alchemy-cookie-consent-customize' ).hidden = true;

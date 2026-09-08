@@ -99,6 +99,15 @@ foreach ( $alchemy_style_vars as $alchemy_prop => $alchemy_value ) {
 $alchemy_style_attr = esc_attr( trim( $alchemy_style_attr ) );
 ?>
 <div id="alchemy-cookie-consent-banner" class="alchemy-cookie-consent-banner alchemy-cookie-consent-hidden" data-alchemy-layout="<?php echo esc_attr( $alchemy_layout ); ?>" data-alchemy-position="<?php echo esc_attr( $alchemy_position ); ?>" style="<?php echo $alchemy_style_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already run through esc_attr() when built above; re-escaping here would double-encode the quotes in a font-family value like "Segoe UI". ?>">
+	<!--
+	"Don't show again" — a quick dismiss, functionally identical to
+	clicking Reject (necessary-only, nothing granted) rather than a
+	distinct third option, since dismissing without an actual choice
+	can never safely mean "assume they're fine with tracking." Logged
+	with its own "dismissed" source so it's distinguishable in the
+	consent log from an explicit Reject All click.
+	-->
+	<button type="button" id="alchemy-cookie-consent-dismiss" class="alchemy-cookie-consent-dismiss" aria-label="Dismiss — don't show again">&times;</button>
 	<div class="alchemy-cookie-consent-inner">
 		<?php if ( 'card' === $alchemy_layout ) : ?>
 			<div class="alchemy-cookie-consent-heading-row">
