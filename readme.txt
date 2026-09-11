@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, ccpa, cookie banner, consent mode
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.10.3
+Stable tag: 1.10.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -367,6 +367,15 @@ either of those ever changes, update this template alongside the code
 change, not just the changelog.
 
 == Changelog ==
+
+= 1.10.4 =
+* Fixed: the inline CSS backstop added in 1.10.2/1.10.3 only knew how
+  to render the full-width Bar shape — so a site configured for the
+  floating-corner Card layout would fall back to a full-width bar
+  (instead of the small rounded card) on a pageload where the real
+  banner.css still hadn't loaded. Added the Card-layout position/size
+  overrides to the backstop so it degrades to the site's actual chosen
+  layout rather than always defaulting to Bar.
 
 = 1.10.3 =
 * Fixed: the revisit button (the small circular cookie icon shown in the

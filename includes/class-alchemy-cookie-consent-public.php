@@ -174,10 +174,20 @@ class Alchemy_Cookie_Consent_Public {
 		// linked file can — a minimal backstop for the rules that matter
 		// most (stay hidden; revisit button stays a small fixed circle in
 		// its corner) even while banner.css is still broken.
+		// The Card-layout overrides below deliberately mirror banner.css's
+		// own [data-alchemy-layout="card"] selectors (same higher
+		// specificity than the plain .alchemy-cookie-consent-banner rule
+		// above) — without them, a site configured for the floating-corner
+		// Card look would fall back to the full-width Bar shape whenever
+		// the real stylesheet is the thing that's failed to load, which
+		// defeats the point of a layout-aware backstop.
 		wp_add_inline_style(
 			'alchemy-cookie-consent-banner',
 			'.alchemy-cookie-consent-hidden{display:none!important}' .
 			'.alchemy-cookie-consent-banner{position:fixed!important;left:0;right:0;bottom:0;z-index:999999;background:#fff;box-sizing:border-box;padding:16px}' .
+			'.alchemy-cookie-consent-banner[data-alchemy-layout="card"]{left:auto;right:auto;bottom:24px;width:min(400px,calc(100vw - 32px));border-radius:16px}' .
+			'.alchemy-cookie-consent-banner[data-alchemy-layout="card"][data-alchemy-position="left"]{left:24px}' .
+			'.alchemy-cookie-consent-banner[data-alchemy-layout="card"][data-alchemy-position="right"]{right:24px}' .
 			'.alchemy-cookie-consent-revisit{position:fixed!important;bottom:16px;z-index:999998;width:40px;height:40px;border-radius:50%!important;background:rgba(255,255,255,.85)!important;border:1px solid rgba(0,0,0,.08)!important;cursor:pointer!important;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,.15)!important}' .
 			'.alchemy-cookie-consent-revisit[data-alchemy-position="left"]{left:16px}' .
 			'.alchemy-cookie-consent-revisit[data-alchemy-position="right"]{right:16px}'
