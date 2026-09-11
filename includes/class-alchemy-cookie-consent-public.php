@@ -185,9 +185,15 @@ class Alchemy_Cookie_Consent_Public {
 			'alchemy-cookie-consent-banner',
 			'.alchemy-cookie-consent-hidden{display:none!important}' .
 			'.alchemy-cookie-consent-banner{position:fixed!important;left:0;right:0;bottom:0;z-index:999999;background:#fff;box-sizing:border-box;padding:16px}' .
-			'.alchemy-cookie-consent-banner[data-alchemy-layout="card"]{left:auto;right:auto;bottom:24px;width:min(400px,calc(100vw - 32px));border-radius:16px}' .
-			'.alchemy-cookie-consent-banner[data-alchemy-layout="card"][data-alchemy-position="left"]{left:24px}' .
-			'.alchemy-cookie-consent-banner[data-alchemy-layout="card"][data-alchemy-position="right"]{right:24px}' .
+			// Anchored from the near edge with the far side left auto (not
+			// a calc(100vw - 32px)-style fluid width) — a LiteSpeed Cache
+			// CSS-minify setup was confirmed (live, via DevTools) to strip
+			// the whitespace around that minus sign, which invalidates the
+			// whole calc() expression and drops the width rule entirely.
+			'.alchemy-cookie-consent-banner[data-alchemy-layout="card"]{left:24px;right:24px;bottom:24px;width:auto;max-width:400px;border-radius:16px}' .
+			'.alchemy-cookie-consent-banner[data-alchemy-layout="card"][data-alchemy-position="left"]{right:auto}' .
+			'.alchemy-cookie-consent-banner[data-alchemy-layout="card"][data-alchemy-position="right"]{left:auto}' .
+			'@media (max-width:448px){.alchemy-cookie-consent-banner[data-alchemy-layout="card"]{left:16px;right:16px;max-width:none}}' .
 			'.alchemy-cookie-consent-revisit{position:fixed!important;bottom:16px;z-index:999998;width:40px;height:40px;border-radius:50%!important;background:rgba(255,255,255,.85)!important;border:1px solid rgba(0,0,0,.08)!important;cursor:pointer!important;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,.15)!important}' .
 			'.alchemy-cookie-consent-revisit[data-alchemy-position="left"]{left:16px}' .
 			'.alchemy-cookie-consent-revisit[data-alchemy-position="right"]{right:16px}'

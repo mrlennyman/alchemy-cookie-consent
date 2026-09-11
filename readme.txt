@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, ccpa, cookie banner, consent mode
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.10.4
+Stable tag: 1.10.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -367,6 +367,19 @@ either of those ever changes, update this template alongside the code
 change, not just the changelog.
 
 == Changelog ==
+
+= 1.10.5 =
+* Fixed: the Card layout's width rule used `min(400px, calc(100vw -
+  32px))`. Confirmed live (via a client's browser DevTools) that a
+  LiteSpeed Cache CSS-minify setup was stripping the whitespace around
+  that minus sign, which invalidates the whole calc() expression per
+  the CSS spec — the browser drops the entire width declaration rather
+  than just losing the fluid sizing, leaving the card with no width
+  constraint at all (rendering as an oversized, oddly cut-off box).
+  Rewrote the Card layout's width to use a fixed max-width with an
+  auto-collapsing far edge instead, avoiding calc()/min() subtraction
+  entirely — safe under minifiers that mishandle it. Applies to both
+  banner.css and the inline CSS backstop added in 1.10.2-1.10.4.
 
 = 1.10.4 =
 * Fixed: the inline CSS backstop added in 1.10.2/1.10.3 only knew how

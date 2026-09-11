@@ -199,21 +199,41 @@
    individually configurable — colors/fonts/buttons still come from the
    same variables as the Bar layout. ---- */
 .alchemy-cookie-consent-banner[data-alchemy-layout="card"] {
-	left: auto;
-	right: auto;
+	left: 24px;
+	right: 24px;
 	bottom: 24px;
-	width: min(400px, calc(100vw - 32px));
+	width: auto;
+	max-width: 400px;
 	border-top: none;
 	border-radius: 16px;
 	padding: 20px !important;
 }
 
+/* Anchored from the near edge; the far side is left unconstrained so
+   max-width (not viewport-width arithmetic) governs the card's size —
+   deliberately avoids calc()/min() with a "100vw - 32px" style
+   subtraction. Some CSS minifiers (seen live on a client's LiteSpeed
+   Cache setup) strip the space around that minus sign, turning it into
+   an invalid expression that gets dropped entirely — leaving the card
+   with no width constraint at all instead of just losing the fluid
+   sizing. */
 .alchemy-cookie-consent-banner[data-alchemy-layout="card"][data-alchemy-position="left"] {
-	left: 24px;
+	right: auto;
 }
 
 .alchemy-cookie-consent-banner[data-alchemy-layout="card"][data-alchemy-position="right"] {
-	right: 24px;
+	left: auto;
+}
+
+/* Below ~448px there's no room for both the 24px inset and the 400px
+   card, so switch to filling the width with a smaller inset instead of
+   the fluid calc() expression this replaced (see comment above). */
+@media (max-width: 448px) {
+	.alchemy-cookie-consent-banner[data-alchemy-layout="card"] {
+		left: 16px;
+		right: 16px;
+		max-width: none;
+	}
 }
 
 .alchemy-cookie-consent-banner[data-alchemy-layout="card"] .alchemy-cookie-consent-inner {

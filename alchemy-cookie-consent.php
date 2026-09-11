@@ -3,7 +3,7 @@
  * Plugin Name: Alchemy Cookie Consent
  * Plugin URI:  https://websitealchemy.com
  * Description: Lightweight cookie consent banner with WP Consent API + Google Consent Mode v2 integration, built for the Website Alchemy client portfolio.
- * Version:     1.10.4
+ * Version:     1.10.5
  * Author:      Website Alchemy
  * Author URI:  https://websitealchemy.com
  * License:     GPL v2 or later
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ALCHEMY_COOKIE_CONSENT_VERSION', '1.10.4' );
+define( 'ALCHEMY_COOKIE_CONSENT_VERSION', '1.10.5' );
 define( 'ALCHEMY_COOKIE_CONSENT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ALCHEMY_COOKIE_CONSENT_URL', plugin_dir_url( __FILE__ ) );
 define( 'ALCHEMY_COOKIE_CONSENT_BASENAME', plugin_basename( __FILE__ ) );
