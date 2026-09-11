@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, ccpa, cookie banner, consent mode
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.10.2
+Stable tag: 1.10.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -367,6 +367,15 @@ either of those ever changes, update this template alongside the code
 change, not just the changelog.
 
 == Changelog ==
+
+= 1.10.3 =
+* Fixed: the revisit button (the small circular cookie icon shown in the
+  corner once a visitor has made a choice) had the same CSS-dependency
+  gap as the hidden state fixed in 1.10.2 — with banner.css unavailable
+  it falls back to a bare, unstyled <button>, which typically picks up a
+  host theme's generic button styling (square, dark, no fixed position)
+  instead of the small fixed circle. Extended the inline backstop
+  stylesheet added in 1.10.2 to also cover the revisit button.
 
 = 1.10.2 =
 * Fixed: the banner, high-risk prompt, and toast all render hidden by

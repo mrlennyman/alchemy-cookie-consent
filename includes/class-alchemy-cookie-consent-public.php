@@ -164,16 +164,23 @@ class Alchemy_Cookie_Consent_Public {
 		// (display: none) lives in banner.css — so if the external
 		// stylesheet ever fails to load (a host-side 503, WAF block, cache
 		// miss race, etc.), every visitor would see them as full-width
-		// unstyled blocks in normal document flow, hidden or not. This is
-		// printed as an actual <style> tag in the page HTML itself (not a
-		// second HTTP request), so it can't fail the same way the linked
-		// file can — a minimal backstop for the one rule that matters most
-		// (stay hidden) plus enough positioning that a banner shown while
-		// banner.css is still broken reads as a bar, not a raw text dump.
+		// unstyled blocks in normal document flow, hidden or not. The
+		// revisit button has the same problem from the other direction:
+		// with no CSS it falls back to a bare <button> — square, no fixed
+		// position, often picking up a host theme's generic dark button
+		// styling — instead of the small fixed-position circular icon.
+		// This is printed as an actual <style> tag in the page HTML itself
+		// (not a second HTTP request), so it can't fail the same way the
+		// linked file can — a minimal backstop for the rules that matter
+		// most (stay hidden; revisit button stays a small fixed circle in
+		// its corner) even while banner.css is still broken.
 		wp_add_inline_style(
 			'alchemy-cookie-consent-banner',
 			'.alchemy-cookie-consent-hidden{display:none!important}' .
-			'.alchemy-cookie-consent-banner{position:fixed!important;left:0;right:0;bottom:0;z-index:999999;background:#fff;box-sizing:border-box;padding:16px}'
+			'.alchemy-cookie-consent-banner{position:fixed!important;left:0;right:0;bottom:0;z-index:999999;background:#fff;box-sizing:border-box;padding:16px}' .
+			'.alchemy-cookie-consent-revisit{position:fixed!important;bottom:16px;z-index:999998;width:40px;height:40px;border-radius:50%!important;background:rgba(255,255,255,.85)!important;border:1px solid rgba(0,0,0,.08)!important;cursor:pointer!important;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,.15)!important}' .
+			'.alchemy-cookie-consent-revisit[data-alchemy-position="left"]{left:16px}' .
+			'.alchemy-cookie-consent-revisit[data-alchemy-position="right"]{right:16px}'
 		);
 
 		wp_enqueue_script( 'alchemy-cookie-consent-banner', ALCHEMY_COOKIE_CONSENT_URL . 'assets/js/banner.js', array(), ALCHEMY_COOKIE_CONSENT_VERSION, true );
