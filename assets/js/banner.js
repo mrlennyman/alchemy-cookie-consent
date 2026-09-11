@@ -104,6 +104,12 @@
 		} );
 
 		banner.classList.add( 'alchemy-cookie-consent-hidden' );
+		// Belt-and-braces alongside the class: the class's display:none
+		// lives entirely in banner.css, so if that stylesheet ever fails
+		// to load (host-side 503, WAF, bad cache, ad-blocker), hiding
+		// still has to work — see enqueue_assets()'s inline-CSS backstop
+		// for the equivalent fix on the initial (pre-JS) hidden state.
+		banner.style.display = 'none';
 		// Exempt-tier auto-accept passes revealButton=false — no visible
 		// affordance at all for regions with no consent requirement,
 		// distinct from Light, which still surfaces the opt-out button.
@@ -146,6 +152,7 @@
 			msg.textContent = notices.join( ' ' );
 		}
 		highRiskBanner.classList.remove( 'alchemy-cookie-consent-hidden' );
+		highRiskBanner.style.display = '';
 	}
 
 	/**
@@ -161,11 +168,13 @@
 		}
 		toast.textContent = message;
 		toast.classList.remove( 'alchemy-cookie-consent-hidden' );
+		toast.style.display = '';
 		if ( toastTimer ) {
 			clearTimeout( toastTimer );
 		}
 		toastTimer = setTimeout( function () {
 			toast.classList.add( 'alchemy-cookie-consent-hidden' );
+			toast.style.display = 'none';
 		}, 4000 );
 	}
 
@@ -195,10 +204,12 @@
 		} );
 
 		highRiskBanner.classList.add( 'alchemy-cookie-consent-hidden' );
+		highRiskBanner.style.display = 'none';
 	}
 
 	function openBanner() {
 		banner.classList.remove( 'alchemy-cookie-consent-hidden' );
+		banner.style.display = '';
 	}
 
 	/**

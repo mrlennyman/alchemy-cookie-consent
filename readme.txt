@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, ccpa, cookie banner, consent mode
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.10.1
+Stable tag: 1.10.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -367,6 +367,19 @@ either of those ever changes, update this template alongside the code
 change, not just the changelog.
 
 == Changelog ==
+
+= 1.10.2 =
+* Fixed: the banner, high-risk prompt, and toast all render hidden by
+  default in the page markup via a CSS class whose only effect
+  (display: none) lived entirely in banner.css — so if that stylesheet
+  ever failed to load on a page load (a host-side 503, WAF block, bad
+  cache, etc.), visitors saw them as full-width unstyled blocks sitting
+  in normal document flow, including visitors who'd already rejected
+  cookies. Added an inline backstop stylesheet (printed directly in the
+  page HTML, so it can't fail the same way a linked file can) that
+  keeps the hidden state working even when banner.css doesn't load, plus
+  a matching inline-style fallback in banner.js alongside every show/hide
+  class toggle so hiding never depends on the external stylesheet alone.
 
 = 1.10.1 =
 * Fixed: clicking [alchemy_privacy_choices] (or an automatic GPC
